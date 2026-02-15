@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Loading Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+    <h1>Face API Model Loading Test</h1>
+    <div id="status">Testing model loading...</div>
+    <canvas id="canvas" width="300" height="300" style="border: 1px solid black;"></canvas>
+    <button id="test-btn">Test Face Detection</button>
+    <div id="result"></div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const resultDiv = document.getElementById('result');
+        const canvas = document.getElementById('canvas');
+        const testBtn = document.getElementById('test-btn');
+
+        // Test model loading
+        async function testModelLoading() {
+            try {
+                statusDiv.innerHTML = 'Loading models from local /models...';
+                
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+                ]);
+                
+                statusDiv.innerHTML = '✅ Models loaded successfully from local!';
+                statusDiv.style.color = 'green';
+                
+            } catch (error) {
+                console.error('Local model loading failed:', error);
+                statusDiv.innerHTML = '❌ Local models failed. Trying CDN...';
+                statusDiv.style.color = 'orange';
+                
+                try {
+                    await Promise.all([
+                        faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+                        faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+                        faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+                    ]);
+                    
+                    statusDiv.innerHTML = '✅ Models loaded successfully from CDN!';
+                    statusDiv.style.color = 'green';
+                    
+                } catch (cdnError) {
+                    console.error('CDN model loading failed:', cdnError);
+                    statusDiv.innerHTML = '❌ All model loading failed!';
+                    statusDiv.style.color = 'red';
+                }
+            }
+        }
+
+        // Test face detection
+        testBtn.addEventListener('click', async () => {
+            try {
+                // Draw a simple test pattern
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = 'lightblue';
+                ctx.fillRect(0, 0, 300, 300);
+                ctx.fillStyle = 'black';
+                ctx.fillText('Test Image', 100, 150);
+                
+                const detection = await faceapi.detectSingleFace(canvas);
+                if (detection) {
+                    resultDiv.innerHTML = '✅ Face detection working!';
+                    resultDiv.style.color = 'green';
+                } else {
+                    resultDiv.innerHTML = 'ℹ️ No face detected (expected for test image)';
+                    resultDiv.style.color = 'blue';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '❌ Face detection error: ' + error.message;
+                resultDiv.style.color = 'red';
+            }
+        });
+
+        // Start the test
+        testModelLoading();
+    </script>
+</body>
+</html>
+
+
