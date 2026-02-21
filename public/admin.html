@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — RIT Smart IMS</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .admin-card {
+            background: var(--surface-card);
+            border: 1px solid var(--surface-glass-border);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .feature-item:hover {
+            background: rgba(212, 168, 67, 0.06);
+            border-color: var(--primary-400);
+            transform: translateY(-2px);
+        }
+
+        .feature-item i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .feature-item h4 {
+            font-size: 0.88rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-item p {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .dept-badge {
+            display: inline-block;
+            padding: 0.3rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+
+        .course-card {
+            padding: 0.75rem 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .course-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon"><img src="/logo.png" alt="RIT"></div>
+                <div>
+                    <div class="sidebar-brand-text">RIT Smart IMS</div>
+                    <div class="sidebar-brand-sub">Admin Panel</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Overview</div>
+                <button class="nav-item active" data-section="section-dashboard"><i class="fas fa-th-large"></i>
+                    Dashboard</button>
+                <button class="nav-item" data-section="section-users"><i class="fas fa-users-cog"></i> Users</button>
+                <button class="nav-item" data-section="section-attendance"><i class="fas fa-calendar-check"></i>
+                    Attendance</button>
+                <div class="sidebar-section-title">Institute</div>
+                <button class="nav-item" data-section="section-departments"><i class="fas fa-building"></i>
+                    Departments</button>
+                <button class="nav-item" data-section="section-courses"><i class="fas fa-book-open"></i>
+                    Courses</button>
+                <button class="nav-item" data-section="section-announcements"><i class="fas fa-bullhorn"></i>
+                    Announcements</button>
+                <div class="sidebar-section-title">Tools</div>
+                <button class="nav-item" data-section="section-data"><i class="fas fa-database"></i> Data Tools</button>
+                <button class="nav-item" data-section="section-system"><i class="fas fa-cogs"></i> System</button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar" id="sidebar-avatar">A</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebar-user-name">Admin</div>
+                        <div class="sidebar-user-role" id="sidebar-user-role">admin</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="Auth.logout()" style="margin-top:0.75rem;"><i
+                        class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <h1 class="topbar-title"><i class="fas fa-shield-alt"
+                        style="margin-right:8px;color:var(--accent-400);"></i>Admin Panel</h1>
+                <div class="topbar-right"><span class="topbar-time"><i class="far fa-clock"></i><span
+                            id="topbar-time"></span></span></div>
+            </div>
+            <div class="page-content">
+
+                <!-- Dashboard -->
+                <div class="section-panel active" id="section-dashboard">
+                    <div class="grid grid-4" style="margin-bottom:1.5rem;">
+                        <div class="stat-card animate-slide-up delay-1">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Total Users</div>
+                                <div class="stat-value" id="stat-users">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-2">
+                            <div class="stat-icon green"><i class="fas fa-user-graduate"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Students</div>
+                                <div class="stat-value" id="stat-students">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-3">
+                            <div class="stat-icon purple"><i class="fas fa-calendar-check"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Att. Records</div>
+                                <div class="stat-value" id="stat-records">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-4">
+                            <div class="stat-icon yellow"><i class="fas fa-building"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Departments</div>
+                                <div class="stat-value" id="stat-depts">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-static" style="margin-bottom:1.5rem;">
+                        <h3 style="margin-bottom:1rem;"><i class="fas fa-rocket"
+                                style="margin-right:8px;color:var(--primary-400);"></i>Quick Actions</h3>
+                        <div class="feature-grid">
+                            <div class="feature-item"
+                                onclick="document.querySelector('[data-section=section-users]').click()"><i
+                                    class="fas fa-users-cog" style="color:var(--info);"></i>
+                                <h4>Manage Users</h4>
+                                <p>View & manage accounts</p>
+                            </div>
+                            <div class="feature-item"
+                                onclick="document.querySelector('[data-section=section-departments]').click()"><i
+                                    class="fas fa-building" style="color:var(--success);"></i>
+                                <h4>Departments</h4>
+                                <p>Manage departments</p>
+                            </div>
+                            <div class="feature-item"
+                                onclick="document.querySelector('[data-section=section-courses]').click()"><i
+                                    class="fas fa-book-open" style="color:var(--accent-400);"></i>
+                                <h4>Courses</h4>
+                                <p>Create & edit courses</p>
+                            </div>
+                            <div class="feature-item"
+                                onclick="document.querySelector('[data-section=section-announcements]').click()"><i
+                                    class="fas fa-bullhorn" style="color:var(--warning);"></i>
+                                <h4>Announcements</h4>
+                                <p>Post campus notices</p>
+                            </div>
+                            <div class="feature-item"
+                                onclick="document.querySelector('[data-section=section-data]').click()"><i
+                                    class="fas fa-download" style="color:var(--primary-400);"></i>
+                                <h4>Export Data</h4>
+                                <p>Download reports</p>
+                            </div>
+                            <div class="feature-item"
+                                onclick="document.querySelector('[data-section=section-system]').click()"><i
+                                    class="fas fa-cogs" style="color:var(--text-muted);"></i>
+                                <h4>System Info</h4>
+                                <p>Version & status</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users -->
+                <div class="section-panel" id="section-users">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-users-cog"
+                                style="margin-right:8px;color:var(--primary-400);"></i>User Management</h2>
+                    </div>
+                    <div class="card-static" style="margin-bottom:1rem;">
+                        <h3 style="margin-bottom:0.75rem;">Default Credentials</h3>
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Role</th>
+                                        <th>Username</th>
+                                        <th>Password</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge badge-info">Student</span></td>
+                                        <td>student1, student2, student3</td>
+                                        <td>pass1, pass2, pass3</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-success">Teacher</span></td>
+                                        <td>teacher1</td>
+                                        <td>pass1</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge"
+                                                style="background:rgba(139,92,246,0.15);color:var(--accent-400);">Admin</span>
+                                        </td>
+                                        <td>admin</td>
+                                        <td>admin123</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-static" id="users-table-container">
+                        <h3 style="margin-bottom:1rem;">Registered Users (localStorage)</h3>
+                        <div id="users-list">
+                            <div class="empty-state"><i class="fas fa-users"></i>
+                                <p>Mock accounts above are always available</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance -->
+                <div class="section-panel" id="section-attendance">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-calendar-check"
+                                style="margin-right:8px;color:var(--success);"></i>Attendance Records</h2>
+                    </div>
+                    <div class="card-static">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="att-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted" style="padding:3rem;">No records
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Departments -->
+                <div class="section-panel" id="section-departments">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-building"
+                                style="margin-right:8px;color:var(--success);"></i>Department Management</h2>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                    style="margin-right:6px;color:var(--success);"></i>Add Department</h3>
+                            <form id="dept-form">
+                                <div class="form-group"><label class="form-label">Department Name</label><input
+                                        type="text" id="dept-name" class="form-input"
+                                        placeholder="e.g. Computer Science" required></div>
+                                <div class="form-group"><label class="form-label">Code</label><input type="text"
+                                        id="dept-code" class="form-input" placeholder="e.g. CSE" required></div>
+                                <div class="form-group"><label class="form-label">HOD Name</label><input type="text"
+                                        id="dept-hod" class="form-input" placeholder="Head of Department"></div>
+                                <button type="submit" class="btn btn-success btn-block"><i class="fas fa-plus"></i> Add
+                                    Department</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Departments</h3>
+                            <div id="dept-list">
+                                <div class="empty-state"><i class="fas fa-building"></i>
+                                    <p>No departments</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Courses -->
+                <div class="section-panel" id="section-courses">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-book-open"
+                                style="margin-right:8px;color:var(--accent-400);"></i>Course Management</h2>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                    style="margin-right:6px;color:var(--success);"></i>Add Course</h3>
+                            <form id="course-form">
+                                <div class="form-group"><label class="form-label">Course Name</label><input type="text"
+                                        id="course-name" class="form-input" placeholder="e.g. Data Structures" required>
+                                </div>
+                                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                    <div class="form-group"><label class="form-label">Code</label><input type="text"
+                                            id="course-code" class="form-input" placeholder="CS201" required></div>
+                                    <div class="form-group"><label class="form-label">Credits</label><input
+                                            type="number" id="course-credits" class="form-input" value="3" min="1"
+                                            max="10"></div>
+                                </div>
+                                <div class="form-group"><label class="form-label">Department</label><select
+                                        id="course-dept" class="form-input">
+                                        <option value="">Select department</option>
+                                    </select></div>
+                                <div class="form-group"><label class="form-label">Semester</label><input type="text"
+                                        id="course-sem" class="form-input" placeholder="e.g. Sem 3"></div>
+                                <button type="submit" class="btn btn-success btn-block"><i class="fas fa-plus"></i> Add
+                                    Course</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Courses</h3>
+                            <div id="course-list">
+                                <div class="empty-state"><i class="fas fa-book-open"></i>
+                                    <p>No courses</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Announcements -->
+                <div class="section-panel" id="section-announcements">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bullhorn"
+                                style="margin-right:8px;color:var(--warning);"></i>Announcements</h2>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                    style="margin-right:6px;color:var(--success);"></i>New Announcement</h3>
+                            <form id="admin-ann-form">
+                                <div class="form-group"><label class="form-label">Title</label><input type="text"
+                                        id="admin-ann-title" class="form-input" placeholder="Announcement title"
+                                        required></div>
+                                <div class="form-group"><label class="form-label">Content</label><textarea
+                                        id="admin-ann-content" class="form-input" rows="4"
+                                        placeholder="Write announcement..." required></textarea></div>
+                                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                    <div class="form-group"><label class="form-label">Category</label><select
+                                            id="admin-ann-cat" class="form-input">
+                                            <option value="general">General</option>
+                                            <option value="academic">Academic</option>
+                                            <option value="exam">Exam</option>
+                                            <option value="event">Event</option>
+                                            <option value="holiday">Holiday</option>
+                                        </select></div>
+                                    <div class="form-group"><label class="form-label">Priority</label><select
+                                            id="admin-ann-pri" class="form-input">
+                                            <option value="normal">Normal</option>
+                                            <option value="low">Low</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select></div>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block"><i
+                                        class="fas fa-paper-plane"></i> Publish</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Published</h3>
+                            <div id="admin-anns-list" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-bullhorn"></i>
+                                    <p>No announcements</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Tools -->
+                <div class="section-panel" id="section-data">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-database"
+                                style="margin-right:8px;color:var(--primary-400);"></i>Data Management</h2>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-download"
+                                    style="margin-right:6px;color:var(--info);"></i>Export Data</h3>
+                            <p class="text-sm text-muted" style="margin-bottom:1rem;">Download all system data as JSON
+                            </p>
+                            <button class="btn btn-primary btn-block" onclick="exportAllData()"><i
+                                    class="fas fa-download"></i> Export JSON</button>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-file-csv"
+                                    style="margin-right:6px;color:var(--success);"></i>Export Attendance CSV</h3>
+                            <p class="text-sm text-muted" style="margin-bottom:1rem;">Download attendance records as CSV
+                            </p>
+                            <button class="btn btn-success btn-block" onclick="exportCSV()"><i
+                                    class="fas fa-file-csv"></i> Export CSV</button>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-upload"
+                                    style="margin-right:6px;color:var(--accent-400);"></i>Bulk Student Import</h3>
+                            <p class="text-sm text-muted" style="margin-bottom:1rem;">Upload CSV with student data
+                                (username, password columns)</p>
+                            <input type="file" id="csv-upload" accept=".csv" style="display:none;"
+                                onchange="handleCSVUpload(event)">
+                            <button class="btn btn-ghost btn-block"
+                                onclick="document.getElementById('csv-upload').click()"><i class="fas fa-upload"></i>
+                                Upload CSV</button>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-trash-alt"
+                                    style="margin-right:6px;color:var(--error);"></i>Clear Data</h3>
+                            <p class="text-sm text-muted" style="margin-bottom:1rem;">Remove all localStorage data</p>
+                            <button class="btn btn-ghost btn-block" onclick="confirmClearData()"
+                                style="color:var(--error);border-color:var(--error);"><i class="fas fa-trash-alt"></i>
+                                Clear All</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System -->
+                <div class="section-panel" id="section-system">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-cogs"
+                                style="margin-right:8px;color:var(--text-muted);"></i>System Info</h2>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Application</h3>
+                            <div class="list-item"><span class="text-muted">Name</span><span class="font-semibold">RIT
+                                    Smart IMS</span></div>
+                            <div class="list-item"><span class="text-muted">Version</span><span
+                                    class="font-semibold">2.0.0</span></div>
+                            <div class="list-item"><span class="text-muted">Build</span><span class="font-semibold">IMS
+                                    Portal</span></div>
+                            <div class="list-item"><span class="text-muted">Type</span><span
+                                    class="font-semibold">Institute Management System</span></div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Technology</h3>
+                            <div class="list-item"><span class="text-muted">Backend</span><span
+                                    class="font-semibold">Node.js + Express</span></div>
+                            <div class="list-item"><span class="text-muted">Database</span><span
+                                    class="font-semibold">MongoDB (Atlas / Local)</span></div>
+                            <div class="list-item"><span class="text-muted">ML Engine</span><span
+                                    class="font-semibold">face-api.js v0.22</span></div>
+                            <div class="list-item"><span class="text-muted">Auth</span><span class="font-semibold">JWT +
+                                    bcrypt</span></div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">IMS Features</h3>
+                            <div class="list-item"><span class="text-muted">Attendance</span><span
+                                    class="badge badge-success">Active</span></div>
+                            <div class="list-item"><span class="text-muted">Face Recognition</span><span
+                                    class="badge badge-success">Active</span></div>
+                            <div class="list-item"><span class="text-muted">Timetable</span><span
+                                    class="badge badge-success">Active</span></div>
+                            <div class="list-item"><span class="text-muted">Grades</span><span
+                                    class="badge badge-success">Active</span></div>
+                            <div class="list-item"><span class="text-muted">Announcements</span><span
+                                    class="badge badge-success">Active</span></div>
+                            <div class="list-item"><span class="text-muted">Departments</span><span
+                                    class="badge badge-success">Active</span></div>
+                            <div class="list-item"><span class="text-muted">Courses</span><span
+                                    class="badge badge-success">Active</span></div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Database Status</h3>
+                            <div class="list-item"><span class="text-muted">Mode</span><span id="db-mode"
+                                    class="badge badge-warning">localStorage</span></div>
+                            <div class="list-item"><span class="text-muted">Records</span><span class="font-semibold"
+                                    id="db-records">0</span></div>
+                            <div class="list-item"><span class="text-muted">Students</span><span class="font-semibold"
+                                    id="db-students">0</span></div>
+                            <p class="text-sm text-muted" style="margin-top:1rem;"><i class="fas fa-info-circle"
+                                    style="margin-right:4px;"></i>Connect MongoDB Atlas for persistent storage.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <button class="mobile-toggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+
+    <script src="/app.js"></script>
+    <script>
+        if (!Auth.requireAuth(['admin'])) { }
+
+        // localStorage keys for admin IMS data
+        const DEPTS_KEY = 'ims_departments';
+        const COURSES_KEY = 'ims_courses';
+
+        function getDepts() { return JSON.parse(localStorage.getItem(DEPTS_KEY) || '[]'); }
+        function saveDepts(d) { localStorage.setItem(DEPTS_KEY, JSON.stringify(d)); }
+        function getCourses() { return JSON.parse(localStorage.getItem(COURSES_KEY) || '[]'); }
+        function saveCourses(c) { localStorage.setItem(COURSES_KEY, JSON.stringify(c)); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCommon();
+            updateAdminDashboard();
+            renderDepts();
+            renderCourses();
+            loadAdminAnns();
+        });
+
+        function updateAdminDashboard() {
+            const students = LocalData.getRegisteredStudents();
+            const records = LocalData.getAllRecords();
+            const depts = getDepts();
+
+            document.getElementById('stat-users').textContent = Object.keys(MockUsers.students).length + Object.keys(MockUsers.teachers).length;
+            document.getElementById('stat-students').textContent = Object.keys(students).length;
+            document.getElementById('stat-records').textContent = records.length;
+            document.getElementById('stat-depts').textContent = depts.length;
+
+            // Attendance table
+            const tbody = document.getElementById('att-table-body');
+            if (records.length > 0) {
+                tbody.innerHTML = records.slice().reverse().map((r, i) => `<tr><td>${records.length - i}</td><td style="font-weight:500;">${r.username}</td><td>${formatDate(r.timestamp)}</td><td>${formatTime(r.timestamp)}</td><td><span class="badge badge-success">Present</span></td></tr>`).join('');
+            }
+
+            document.getElementById('db-records').textContent = records.length;
+            document.getElementById('db-students').textContent = Object.keys(students).length;
+        }
+
+        // ---- Departments ----
+        document.getElementById('dept-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const depts = getDepts();
+            depts.push({
+                id: Date.now().toString(),
+                name: document.getElementById('dept-name').value.trim(),
+                code: document.getElementById('dept-code').value.trim().toUpperCase(),
+                hod: document.getElementById('dept-hod').value.trim(),
+                createdAt: new Date().toISOString()
+            });
+            saveDepts(depts);
+            Toast.success('Department added!');
+            document.getElementById('dept-form').reset();
+            renderDepts();
+            updateAdminDashboard();
+            updateCourseDeptSelect();
+        });
+
+        function renderDepts() {
+            const depts = getDepts();
+            const c = document.getElementById('dept-list');
+            if (depts.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-building"></i><p>No departments</p></div>'; return; }
+
+            const colors = ['var(--info)', 'var(--success)', 'var(--accent-400)', 'var(--warning)', 'var(--error)', 'var(--primary-400)'];
+            c.innerHTML = depts.map((d, i) => `<div class="course-card">
+                <div>
+                    <span class="dept-badge" style="background:${colors[i % colors.length]}22;color:${colors[i % colors.length]};">${d.code}</span>
+                    <strong style="margin-left:0.5rem;">${d.name}</strong>
+                    ${d.hod ? `<span class="text-sm text-muted" style="margin-left:0.5rem;">HOD: ${d.hod}</span>` : ''}
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="deleteDept('${d.id}')" style="color:var(--error);font-size:0.7rem;"><i class="fas fa-trash"></i></button>
+            </div>`).join('');
+            updateCourseDeptSelect();
+        }
+
+        function deleteDept(id) { saveDepts(getDepts().filter(d => d.id !== id)); Toast.info('Deleted.'); renderDepts(); updateAdminDashboard(); }
+
+        // ---- Courses ----
+        function updateCourseDeptSelect() {
+            const sel = document.getElementById('course-dept');
+            const depts = getDepts();
+            sel.innerHTML = '<option value="">Select department</option>' + depts.map(d => `<option value="${d.code}">${d.name} (${d.code})</option>`).join('');
+        }
+
+        document.getElementById('course-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const courses = getCourses();
+            courses.push({
+                id: Date.now().toString(),
+                name: document.getElementById('course-name').value.trim(),
+                code: document.getElementById('course-code').value.trim().toUpperCase(),
+                credits: parseInt(document.getElementById('course-credits').value) || 3,
+                department: document.getElementById('course-dept').value,
+                semester: document.getElementById('course-sem').value.trim(),
+                createdAt: new Date().toISOString()
+            });
+            saveCourses(courses);
+            Toast.success('Course added!');
+            document.getElementById('course-form').reset();
+            document.getElementById('course-credits').value = '3';
+            renderCourses();
+        });
+
+        function renderCourses() {
+            const courses = getCourses();
+            const c = document.getElementById('course-list');
+            if (courses.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-book-open"></i><p>No courses</p></div>'; return; }
+            c.innerHTML = courses.map(co => `<div class="course-card">
+                <div>
+                    <span class="badge badge-info" style="font-size:0.7rem;margin-right:0.5rem;">${co.code}</span>
+                    <strong>${co.name}</strong>
+                    <span class="text-sm text-muted" style="margin-left:0.5rem;">${co.credits} credits • ${co.department || '—'} • ${co.semester || '—'}</span>
+                </div>
+                <button class="btn btn-ghost btn-sm" onclick="deleteCourse('${co.id}')" style="color:var(--error);font-size:0.7rem;"><i class="fas fa-trash"></i></button>
+            </div>`).join('');
+        }
+
+        function deleteCourse(id) { saveCourses(getCourses().filter(c => c.id !== id)); Toast.info('Deleted.'); renderCourses(); }
+
+        // ---- Announcements ----
+        document.getElementById('admin-ann-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            LocalData.addAnnouncement({
+                title: document.getElementById('admin-ann-title').value.trim(),
+                content: document.getElementById('admin-ann-content').value.trim(),
+                category: document.getElementById('admin-ann-cat').value,
+                priority: document.getElementById('admin-ann-pri').value,
+                authorName: 'Admin',
+                authorRole: 'admin'
+            });
+            Toast.success('Published!');
+            document.getElementById('admin-ann-form').reset();
+            loadAdminAnns();
+        });
+
+        function loadAdminAnns() {
+            const anns = LocalData.getAnnouncements();
+            const c = document.getElementById('admin-anns-list');
+            if (anns.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No announcements</p></div>'; return; }
+            c.innerHTML = anns.map(a => `<div class="course-card">
+                <div><strong>${a.title}</strong><span class="text-sm text-muted" style="margin-left:0.5rem;">${(a.category || 'general').toUpperCase()} • ${timeAgo(a.createdAt)}</span></div>
+                <button class="btn btn-ghost btn-sm" onclick="deleteAdminAnn('${a.id}')" style="color:var(--error);font-size:0.7rem;"><i class="fas fa-trash"></i></button>
+            </div>`).join('');
+        }
+
+        function deleteAdminAnn(id) { LocalData.deleteAnnouncement(id); Toast.info('Deleted.'); loadAdminAnns(); }
+
+        // ---- Data Tools ----
+        function exportAllData() {
+            const data = {
+                attendanceData: LocalData.get(),
+                departments: getDepts(),
+                courses: getCourses(),
+                exportedAt: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `ims_export_${new Date().toISOString().split('T')[0]}.json`; a.click();
+            Toast.success('Data exported!');
+        }
+
+        function exportCSV() {
+            const recs = LocalData.getAllRecords();
+            if (recs.length === 0) { Toast.warning('No records.'); return; }
+            const csv = ['Student,Date,Time,Status'];
+            recs.forEach(r => csv.push(`${r.username},${formatDate(r.timestamp)},${formatTime(r.timestamp)},Present`));
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `attendance_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+            Toast.success('CSV exported!');
+        }
+
+        function handleCSVUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const lines = e.target.result.split('\n').filter(l => l.trim());
+                const header = lines[0].toLowerCase();
+                if (!header.includes('username')) { Toast.error('CSV must have a "username" column'); return; }
+                let count = 0;
+                lines.slice(1).forEach(line => {
+                    const cols = line.split(',').map(c => c.trim());
+                    if (cols[0]) { MockUsers.students[cols[0]] = cols[1] || 'pass1'; count++; }
+                });
+                Toast.success(`Imported ${count} students`);
+            };
+            reader.readAsText(file);
+        }
+
+        function confirmClearData() {
+            if (confirm('⚠️ This will delete ALL localStorage data. Continue?')) {
+                localStorage.removeItem('attendanceData');
+                localStorage.removeItem(DEPTS_KEY);
+                localStorage.removeItem(COURSES_KEY);
+                Toast.warning('All data cleared.');
+                updateAdminDashboard(); renderDepts(); renderCourses(); loadAdminAnns();
+            }
+        }
+    </script>
+</body>
+
+</html>

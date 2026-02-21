@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Incharge — RIT Smart IMS</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .route-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            transition: all 0.2s;
+            margin-bottom: 0.75rem;
+        }
+
+        .route-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .route-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .route-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-md);
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: white;
+        }
+
+        .route-stops {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin-top: 0.5rem;
+        }
+
+        .route-stop {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.5rem;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+        }
+
+        .route-stop.start {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .route-stop.end {
+            background: rgba(212, 168, 67, 0.12);
+            color: var(--primary-400);
+            font-weight: 600;
+        }
+
+        .wa-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.72rem;
+            padding: 0.25rem 0.6rem;
+            background: rgba(37, 211, 102, 0.15);
+            color: #25d366;
+            border-radius: var(--radius-full);
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .wa-link:hover {
+            background: rgba(37, 211, 102, 0.25);
+        }
+
+        .notice-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #f59e0b;
+            transition: all 0.2s;
+        }
+
+        .notice-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover,
+        .color-swatch.active {
+            border-color: white;
+            transform: scale(1.15);
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon"><img src="/logo.png" alt="RIT"></div>
+                <div>
+                    <div class="sidebar-brand-text">RIT Smart IMS</div>
+                    <div class="sidebar-brand-sub">Transport Portal</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Overview</div>
+                <button class="nav-item active" data-section="section-dashboard"><i class="fas fa-th-large"></i>
+                    Dashboard</button>
+                <div class="sidebar-section-title">Manage</div>
+                <button class="nav-item" data-section="section-routes"><i class="fas fa-route"></i> Bus Routes</button>
+                <button class="nav-item" data-section="section-notices"><i class="fas fa-bell"></i> Bus Notices</button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar" id="sidebar-avatar">T</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebar-user-name">Transport</div>
+                        <div class="sidebar-user-role" id="sidebar-user-role">transport</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="Auth.logout()" style="margin-top:0.75rem;"><i
+                        class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <h1 class="topbar-title"><i class="fas fa-bus" style="margin-right:8px;color:#f59e0b;"></i>Transport
+                    Dashboard</h1>
+                <div class="topbar-right"><span class="topbar-time"><i class="far fa-clock"></i><span
+                            id="topbar-time"></span></span></div>
+            </div>
+            <div class="page-content">
+
+                <!-- Dashboard -->
+                <div class="section-panel active" id="section-dashboard">
+                    <div class="grid grid-3" style="margin-bottom:1.5rem;">
+                        <div class="stat-card animate-slide-up delay-1">
+                            <div class="stat-icon yellow"><i class="fas fa-bus"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Total Routes</div>
+                                <div class="stat-value" id="stat-routes">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-2">
+                            <div class="stat-icon blue"><i class="fas fa-bell"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Bus Notices</div>
+                                <div class="stat-value" id="stat-notices">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-3">
+                            <div class="stat-icon green"><i class="fab fa-whatsapp"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">WhatsApp Groups</div>
+                                <div class="stat-value" id="stat-wa">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-rocket"
+                                    style="margin-right:8px;color:#f59e0b;"></i>Quick Actions</h3>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                <button class="btn btn-primary btn-block"
+                                    onclick="document.querySelector('[data-section=section-routes]').click()"><i
+                                        class="fas fa-plus"></i> Add Route</button>
+                                <button class="btn btn-success btn-block"
+                                    onclick="document.querySelector('[data-section=section-notices]').click()"><i
+                                        class="fas fa-bell"></i> Send Notice</button>
+                            </div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-info-circle"
+                                    style="margin-right:8px;color:var(--info);"></i>How It Works</h3>
+                            <div class="list-item"><span class="text-muted">1.</span><span>Create bus routes with stops
+                                    and timings</span></div>
+                            <div class="list-item"><span class="text-muted">2.</span><span>Add WhatsApp group links for
+                                    each route</span></div>
+                            <div class="list-item"><span class="text-muted">3.</span><span>Send bus notices visible to
+                                    teachers & students</span></div>
+                            <div class="list-item"><span class="text-muted">4.</span><span>Students & teachers see
+                                    routes + join WhatsApp groups</span></div>
+                        </div>
+                    </div>
+                    <div class="card-static" style="margin-top:1rem;">
+                        <h3 style="margin-bottom:1rem;">All Routes</h3>
+                        <div id="dash-routes-list">
+                            <div class="empty-state"><i class="fas fa-bus"></i>
+                                <p>No routes yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bus Routes Management -->
+                <div class="section-panel" id="section-routes">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-route" style="margin-right:8px;color:#f59e0b;"></i>Bus
+                            Route Management</h2>
+                        <p class="page-subtitle">Add, edit, and manage all bus routes</p>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                    style="margin-right:6px;color:var(--success);"></i>Add / Edit Route</h3>
+                            <form id="route-form">
+                                <input type="hidden" id="route-edit-id" value="">
+                                <div class="form-row" style="display:grid;grid-template-columns:80px 1fr;gap:0.75rem;">
+                                    <div class="form-group"><label class="form-label">Number</label><input type="text"
+                                            id="route-number" class="form-input" placeholder="R1" required></div>
+                                    <div class="form-group"><label class="form-label">Route Name</label><input
+                                            type="text" id="route-name" class="form-input"
+                                            placeholder="e.g. City Center Route" required></div>
+                                </div>
+                                <div class="form-group"><label class="form-label">Timing</label><input type="text"
+                                        id="route-timing" class="form-input" placeholder="e.g. 7:30 AM / 5:00 PM"
+                                        required></div>
+                                <div class="form-group"><label class="form-label">Stops (comma separated)</label><input
+                                        type="text" id="route-stops" class="form-input"
+                                        placeholder="Campus Gate, Main Road, Bus Stand, City Center" required></div>
+                                <div class="form-group"><label class="form-label"><i class="fab fa-whatsapp"
+                                            style="margin-right:4px;color:#25d366;"></i>WhatsApp Group
+                                        Link</label><input type="url" id="route-whatsapp" class="form-input"
+                                        placeholder="https://chat.whatsapp.com/..."></div>
+                                <div class="form-group">
+                                    <label class="form-label">Color</label>
+                                    <div class="color-picker" id="color-picker">
+                                        <div class="color-swatch active" data-color="#D4A843"
+                                            style="background:#D4A843;"></div>
+                                        <div class="color-swatch" data-color="#22c55e" style="background:#22c55e;">
+                                        </div>
+                                        <div class="color-swatch" data-color="#f59e0b" style="background:#f59e0b;">
+                                        </div>
+                                        <div class="color-swatch" data-color="#ef4444" style="background:#ef4444;">
+                                        </div>
+                                        <div class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6;">
+                                        </div>
+                                        <div class="color-swatch" data-color="#06b6d4" style="background:#06b6d4;">
+                                        </div>
+                                        <div class="color-swatch" data-color="#ec4899" style="background:#ec4899;">
+                                        </div>
+                                        <div class="color-swatch" data-color="#14b8a6" style="background:#14b8a6;">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block" id="route-submit-btn"><i
+                                        class="fas fa-plus"></i> Add Route</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Existing Routes</h3>
+                            <div id="routes-list" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-bus"></i>
+                                    <p>No routes added</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bus Notices -->
+                <div class="section-panel" id="section-notices">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bell" style="margin-right:8px;color:#f59e0b;"></i>Bus
+                            Notices</h2>
+                        <p class="page-subtitle">Send transport notices to all students and teachers</p>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-paper-plane"
+                                    style="margin-right:6px;color:var(--success);"></i>Send Notice</h3>
+                            <form id="notice-form">
+                                <div class="form-group"><label class="form-label">Title</label><input type="text"
+                                        id="notice-title" class="form-input" placeholder="e.g. Route R3 Delayed"
+                                        required></div>
+                                <div class="form-group"><label class="form-label">Message</label><textarea
+                                        id="notice-content" class="form-input" rows="4"
+                                        placeholder="Write your transport notice..." required></textarea></div>
+                                <div class="form-group"><label class="form-label">Priority</label>
+                                    <select id="notice-priority" class="form-input">
+                                        <option value="normal">Normal</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block"><i
+                                        class="fas fa-paper-plane"></i> Send Notice</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Sent Notices</h3>
+                            <div id="notices-list" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-bell"></i>
+                                    <p>No notices sent</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <button class="mobile-toggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+
+    <script src="/app.js"></script>
+    <script>
+        if (!Auth.requireAuth(['transport'])) { }
+
+        let selectedColor = '#D4A843';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCommon();
+            updateDashboard();
+            renderRoutesList();
+            renderNoticesList();
+
+            // Color picker
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.addEventListener('click', () => {
+                    document.querySelectorAll('.color-swatch').forEach(x => x.classList.remove('active'));
+                    s.classList.add('active');
+                    selectedColor = s.dataset.color;
+                });
+            });
+        });
+
+        function updateDashboard() {
+            const routes = LocalData.getBusRoutes();
+            const notices = LocalData.getBusNotices();
+            document.getElementById('stat-routes').textContent = routes.length;
+            document.getElementById('stat-notices').textContent = notices.length;
+            document.getElementById('stat-wa').textContent = routes.filter(r => r.whatsapp).length;
+
+            // Dashboard routes overview
+            const c = document.getElementById('dash-routes-list');
+            if (routes.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-bus"></i><p>No routes yet — add one!</p></div>'; return; }
+            c.innerHTML = routes.map(r => renderRouteCard(r, false)).join('');
+        }
+
+        function renderRouteCard(r, showActions = true) {
+            return `<div class="route-card">
+                <div class="route-header">
+                    <div style="display:flex;align-items:center;gap:0.75rem;">
+                        <div class="route-badge" style="background:${r.color || '#6366f1'};">${r.number}</div>
+                        <div>
+                            <h4 style="font-size:0.95rem;font-weight:700;">${r.name}</h4>
+                            <p style="font-size:0.75rem;color:var(--text-muted);"><i class="far fa-clock" style="margin-right:4px;"></i>${r.timing}</p>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        ${r.whatsapp ? `<a href="${r.whatsapp}" target="_blank" rel="noopener" class="wa-link"><i class="fab fa-whatsapp"></i> Group</a>` : ''}
+                        ${showActions ? `<button class="btn btn-ghost btn-sm" onclick="editRoute('${r.id}')" style="font-size:0.7rem;"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-ghost btn-sm" onclick="deleteRoute('${r.id}')" style="color:var(--error);font-size:0.7rem;"><i class="fas fa-trash"></i></button>` : ''}
+                    </div>
+                </div>
+                <div class="route-stops">
+                    ${(r.stops || []).map((s, i) => `<span class="route-stop ${i === 0 ? 'start' : i === r.stops.length - 1 ? 'end' : ''}">${i === 0 ? '▶ ' : i === r.stops.length - 1 ? '🏁 ' : ''}${s}</span>`).join('<span style="color:var(--text-muted);font-size:0.6rem;">→</span>')}
+                </div>
+            </div>`;
+        }
+
+        // ---- Routes CRUD ----
+        document.getElementById('route-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const editId = document.getElementById('route-edit-id').value;
+            const routeData = {
+                number: document.getElementById('route-number').value.trim().toUpperCase(),
+                name: document.getElementById('route-name').value.trim(),
+                timing: document.getElementById('route-timing').value.trim(),
+                stops: document.getElementById('route-stops').value.split(',').map(s => s.trim()).filter(Boolean),
+                whatsapp: document.getElementById('route-whatsapp').value.trim() || '',
+                color: selectedColor
+            };
+
+            if (editId) {
+                LocalData.updateBusRoute(editId, routeData);
+                Toast.success('Route updated!');
+                document.getElementById('route-edit-id').value = '';
+                document.getElementById('route-submit-btn').innerHTML = '<i class="fas fa-plus"></i> Add Route';
+            } else {
+                LocalData.addBusRoute(routeData);
+                Toast.success('Route added!');
+            }
+            document.getElementById('route-form').reset();
+            renderRoutesList();
+            updateDashboard();
+        });
+
+        function renderRoutesList() {
+            const routes = LocalData.getBusRoutes();
+            const c = document.getElementById('routes-list');
+            if (routes.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-bus"></i><p>No routes</p></div>'; return; }
+            c.innerHTML = routes.map(r => renderRouteCard(r, true)).join('');
+        }
+
+        function editRoute(id) {
+            const routes = LocalData.getBusRoutes();
+            const r = routes.find(x => x.id === id);
+            if (!r) return;
+            document.getElementById('route-edit-id').value = r.id;
+            document.getElementById('route-number').value = r.number || '';
+            document.getElementById('route-name').value = r.name || '';
+            document.getElementById('route-timing').value = r.timing || '';
+            document.getElementById('route-stops').value = (r.stops || []).join(', ');
+            document.getElementById('route-whatsapp').value = r.whatsapp || '';
+            selectedColor = r.color || '#D4A843';
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.toggle('active', s.dataset.color === selectedColor);
+            });
+            document.getElementById('route-submit-btn').innerHTML = '<i class="fas fa-save"></i> Update Route';
+            document.querySelector('[data-section=section-routes]').click();
+            Toast.info('Editing route ' + r.number);
+        }
+
+        function deleteRoute(id) {
+            if (confirm('Delete this route?')) {
+                LocalData.deleteBusRoute(id);
+                Toast.info('Route deleted.');
+                renderRoutesList();
+                updateDashboard();
+            }
+        }
+
+        // ---- Notices ----
+        document.getElementById('notice-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            LocalData.addBusNotice({
+                title: document.getElementById('notice-title').value.trim(),
+                content: document.getElementById('notice-content').value.trim(),
+                priority: document.getElementById('notice-priority').value,
+                authorName: Auth.getUser()?.username || 'Transport Incharge',
+                authorRole: 'transport'
+            });
+            Toast.success('Notice sent to all students and teachers!');
+            document.getElementById('notice-form').reset();
+            renderNoticesList();
+            updateDashboard();
+        });
+
+        function renderNoticesList() {
+            const notices = LocalData.getBusNotices();
+            const c = document.getElementById('notices-list');
+            if (notices.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-bell"></i><p>No notices sent</p></div>'; return; }
+            c.innerHTML = notices.map(n => `<div class="notice-item" style="border-left-color:${n.priority === 'urgent' ? 'var(--error)' : n.priority === 'high' ? '#f59e0b' : 'var(--info)'};">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <h4 style="font-size:0.95rem;font-weight:600;">${n.title}</h4>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteNotice('${n.id}')" style="padding:2px 6px;font-size:0.7rem;color:var(--error);"><i class="fas fa-trash"></i></button>
+                </div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.4rem;">${n.content}</p>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">
+                    <span>${n.priority === 'urgent' ? '🚨 URGENT' : n.priority === 'high' ? '⚠️ HIGH' : 'ℹ️ Normal'}</span>
+                    <span>•</span><span>${timeAgo(n.createdAt)}</span>
+                </div>
+            </div>`).join('');
+        }
+
+        function deleteNotice(id) { LocalData.deleteBusNotice(id); Toast.info('Deleted.'); renderNoticesList(); updateDashboard(); }
+    </script>
+</body>
+
+</html>

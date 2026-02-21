@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard — RIT Smart IMS</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .timetable-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(6, 1fr);
+            gap: 1px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            font-size: 0.8rem;
+        }
+
+        .tt-header {
+            background: rgba(212, 168, 67, 0.1);
+            padding: 0.6rem 0.4rem;
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary-400);
+        }
+
+        .tt-time {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.5rem 0.4rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .tt-cell {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 0.5rem 0.4rem;
+            text-align: center;
+            min-height: 42px;
+        }
+
+        .tt-cell.has-class {
+            background: rgba(212, 168, 67, 0.06);
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .ann-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--primary-400);
+            transition: all 0.2s;
+        }
+
+        .ann-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ann-item.urgent {
+            border-left-color: var(--error);
+        }
+
+        .ann-item.high {
+            border-left-color: var(--warning);
+        }
+
+        .ann-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .grade-bar {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden;
+        }
+
+        .grade-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .bus-route-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .bus-route-card:hover {
+            background: rgba(212, 168, 67, 0.06);
+            border-color: rgba(212, 168, 67, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .bus-route-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .bus-route-number {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .bus-route-stops {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .bus-stop {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.5rem;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+        }
+
+        .bus-stop.start {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .bus-stop.end {
+            background: rgba(212, 168, 67, 0.12);
+            color: var(--primary-400);
+            font-weight: 600;
+        }
+
+        .wa-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0.35rem 0.75rem;
+            background: rgba(37, 211, 102, 0.15);
+            color: #25d366;
+            border: 1px solid rgba(37, 211, 102, 0.25);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .wa-btn:hover {
+            background: rgba(37, 211, 102, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .bus-notice-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #f59e0b;
+            transition: all 0.2s;
+        }
+
+        .bus-notice-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .bus-notice-item.urgent {
+            border-left-color: var(--error);
+        }
+
+        .bus-notice-item.high {
+            border-left-color: #f59e0b;
+        }
+
+        .canteen-hero {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .canteen-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: var(--radius-xl);
+            background: linear-gradient(135deg, #ff6b35, #f7931a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+        }
+
+        .order-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #ff6b35, #f7931a);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+            text-decoration: none;
+        }
+
+        .order-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.45);
+        }
+
+        .order-btn:active {
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon"><img src="/logo.png" alt="RIT"></div>
+                <div>
+                    <div class="sidebar-brand-text">RIT Smart IMS</div>
+                    <div class="sidebar-brand-sub">Student Portal</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Menu</div>
+                <button class="nav-item active" data-section="section-dashboard"><i class="fas fa-th-large"></i>
+                    Dashboard</button>
+                <button class="nav-item" data-section="section-register"><i class="fas fa-camera"></i> Face
+                    Registration</button>
+                <button class="nav-item" data-section="section-history"><i class="fas fa-history"></i>
+                    Attendance</button>
+                <div class="sidebar-section-title">Academics</div>
+                <button class="nav-item" data-section="section-timetable"><i class="fas fa-calendar-alt"></i>
+                    Timetable</button>
+                <button class="nav-item" data-section="section-announcements"><i class="fas fa-bullhorn"></i>
+                    Announcements</button>
+                <button class="nav-item" data-section="section-grades"><i class="fas fa-award"></i> Grades</button>
+                <div class="sidebar-section-title">Campus</div>
+                <button class="nav-item" data-section="section-busroutes"><i class="fas fa-bus"></i> Bus Routes</button>
+                <button class="nav-item" data-section="section-busnotices"><i class="fas fa-bell"
+                        style="color:#f59e0b;"></i> Bus Notices</button>
+                <button class="nav-item" data-section="section-canteen"><i class="fas fa-utensils"></i> Canteen</button>
+                <button class="nav-item" data-section="section-profile"><i class="fas fa-user-circle"></i>
+                    Profile</button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar" id="sidebar-avatar">S</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebar-user-name">Student</div>
+                        <div class="sidebar-user-role" id="sidebar-user-role">student</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="Auth.logout()" style="margin-top:0.75rem;"><i
+                        class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <h1 class="topbar-title"><i class="fas fa-th-large"
+                        style="margin-right:8px; color:var(--primary-400);"></i>Student Dashboard</h1>
+                <div class="topbar-right"><span class="topbar-time"><i class="far fa-clock"></i><span
+                            id="topbar-time"></span></span></div>
+            </div>
+            <div class="page-content">
+
+                <!-- Dashboard -->
+                <div class="section-panel active" id="section-dashboard">
+                    <div class="grid grid-4" style="margin-bottom:1.5rem;">
+                        <div class="stat-card animate-slide-up delay-1">
+                            <div class="stat-icon green"><i class="fas fa-calendar-check"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Total Present</div>
+                                <div class="stat-value" id="stat-total">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-2">
+                            <div class="stat-icon blue"><i class="fas fa-percentage"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Attendance Rate</div>
+                                <div class="stat-value" id="stat-rate">0%</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-3">
+                            <div class="stat-icon purple"><i class="fas fa-fire"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Current Streak</div>
+                                <div class="stat-value" id="stat-streak">0 days</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-4">
+                            <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Last Check-in</div>
+                                <div class="stat-value" id="stat-last" style="font-size:0.95rem;">Never</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-2-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-bullhorn"
+                                    style="margin-right:8px; color:var(--warning);"></i>Latest Announcements</h3>
+                            <div id="dash-announcements">
+                                <div class="empty-state"><i class="fas fa-bullhorn"></i>
+                                    <p>No announcements</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-user-check"
+                                    style="margin-right:8px; color:var(--success);"></i>Registration Status</h3>
+                            <div id="reg-status" style="text-align:center; padding:2rem 0;">
+                                <div
+                                    style="width:80px;height:80px;border-radius:50%;background:var(--error-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                                    <i class="fas fa-times" style="font-size:2rem;color:var(--error);"></i>
+                                </div>
+                                <p style="font-weight:600;margin-bottom:0.25rem;">Face Not Registered</p>
+                                <p class="text-muted text-sm">Register your face to enable attendance</p>
+                                <button class="btn btn-primary btn-sm mt-3"
+                                    onclick="document.querySelector('[data-section=section-register]').click();"><i
+                                        class="fas fa-camera"></i> Register Now</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Face Registration -->
+                <div class="section-panel" id="section-register">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-camera"
+                                style="margin-right:8px; color:var(--primary-400);"></i>Face Registration</h2>
+                        <p class="page-subtitle">Capture your face to enable attendance tracking</p>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Camera Feed</h3>
+                            <div class="camera-container" style="margin-bottom:1rem;"><video id="student-video" autoplay
+                                    playsinline></video>
+                                <div class="camera-overlay">
+                                    <div class="camera-crosshair"></div>
+                                </div>
+                            </div>
+                            <canvas id="student-canvas" style="display:none;"></canvas>
+                            <button class="btn btn-primary btn-block" id="btn-capture"><i class="fas fa-camera"></i>
+                                Capture & Register Face</button>
+                            <p class="text-sm text-muted mt-2" style="text-align:center;">Position your face within the
+                                circle and click capture</p>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Instructions</h3>
+                            <div style="display:flex;flex-direction:column;gap:1rem;">
+                                <div class="list-item"
+                                    style="background:var(--info-soft);border-radius:var(--radius-md);">
+                                    <div class="flex items-center gap-2"><i class="fas fa-lightbulb"
+                                            style="color:var(--info);"></i><span>Ensure good lighting on your
+                                            face</span></div>
+                                </div>
+                                <div class="list-item"
+                                    style="background:var(--success-soft);border-radius:var(--radius-md);">
+                                    <div class="flex items-center gap-2"><i class="fas fa-eye"
+                                            style="color:var(--success);"></i><span>Look directly at the camera</span>
+                                    </div>
+                                </div>
+                                <div class="list-item"
+                                    style="background:rgba(139,92,246,0.15);border-radius:var(--radius-md);">
+                                    <div class="flex items-center gap-2"><i class="fas fa-glasses"
+                                            style="color:var(--accent-400);"></i><span>Remove sunglasses if
+                                            wearing</span></div>
+                                </div>
+                                <div class="list-item"
+                                    style="background:var(--warning-soft);border-radius:var(--radius-md);">
+                                    <div class="flex items-center gap-2"><i class="fas fa-arrows-alt"
+                                            style="color:var(--warning);"></i><span>Keep your face centered in the
+                                            frame</span></div>
+                                </div>
+                            </div>
+                            <div id="capture-result" style="margin-top:1.5rem;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance History -->
+                <div class="section-panel" id="section-history">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-history"
+                                style="margin-right:8px; color:var(--primary-400);"></i>Attendance History</h2>
+                    </div>
+                    <div class="card-static">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table-body">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted" style="padding:3rem;">No records
+                                            found</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timetable -->
+                <div class="section-panel" id="section-timetable">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-calendar-alt"
+                                style="margin-right:8px; color:var(--primary-400);"></i>Class Timetable</h2>
+                        <p class="page-subtitle">Your weekly schedule</p>
+                    </div>
+                    <div class="card-static" id="timetable-container">
+                        <div class="empty-state"><i class="fas fa-calendar-alt"></i>
+                            <p>No timetable available yet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Announcements -->
+                <div class="section-panel" id="section-announcements">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bullhorn"
+                                style="margin-right:8px; color:var(--warning);"></i>Announcements</h2>
+                        <p class="page-subtitle">Campus notices and updates</p>
+                    </div>
+                    <div class="card-static" id="announcements-list">
+                        <div class="empty-state"><i class="fas fa-bullhorn"></i>
+                            <p>No announcements to display</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grades -->
+                <div class="section-panel" id="section-grades">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-award"
+                                style="margin-right:8px; color:var(--success);"></i>My Grades</h2>
+                        <p class="page-subtitle">Academic performance overview</p>
+                    </div>
+                    <div class="card-static" id="grades-container">
+                        <div class="empty-state"><i class="fas fa-award"></i>
+                            <p>No grades available yet</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bus Routes -->
+                <div class="section-panel" id="section-busroutes">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bus"
+                                style="margin-right:8px; color:var(--info);"></i>Bus Routes</h2>
+                        <p class="page-subtitle">View all campus bus routes and timings</p>
+                    </div>
+                    <div class="grid grid-2" id="bus-routes-container"></div>
+                </div>
+
+                <!-- Bus Notices -->
+                <div class="section-panel" id="section-busnotices">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bell" style="margin-right:8px; color:#f59e0b;"></i>Bus
+                            Notices</h2>
+                        <p class="page-subtitle">Transport updates from the Transport Incharge</p>
+                    </div>
+                    <div class="card-static" id="bus-notices-container">
+                        <div class="empty-state"><i class="fas fa-bell"></i>
+                            <p>No transport notices</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canteen -->
+                <div class="section-panel" id="section-canteen">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-utensils"
+                                style="margin-right:8px; color:#ff6b35;"></i>Canteen — BillBot</h2>
+                        <p class="page-subtitle">Order food from the campus canteen</p>
+                    </div>
+                    <div class="card-static">
+                        <div class="canteen-hero">
+                            <div class="canteen-logo"><i class="fas fa-hamburger"></i></div>
+                            <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:0.5rem;">Campus Canteen</h2>
+                            <p style="color:var(--text-secondary);margin-bottom:0.5rem;font-size:0.95rem;">Powered by
+                                <strong>BillBot</strong> × POS Easy
+                            </p>
+                            <p
+                                style="color:var(--text-muted);margin-bottom:2rem;font-size:0.85rem;max-width:400px;margin-left:auto;margin-right:auto;">
+                                Browse the menu, place your order online, and pick it up from the canteen counter. No
+                                more waiting in long queues!</p>
+                            <a href="https://public.positeasy.in/7efd859e-a0f7-4864-a70b-69f918b99c4b/Store1s/dashboard/menu"
+                                target="_blank" rel="noopener" class="order-btn" id="canteen-order-btn">
+                                <i class="fas fa-shopping-cart"></i> Order Now
+                            </a>
+                            <p style="color:var(--text-muted);margin-top:1.5rem;font-size:0.75rem;"><i
+                                    class="fas fa-external-link-alt" style="margin-right:4px;"></i>Opens in a new tab —
+                                POS Easy ordering portal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile -->
+                <div class="section-panel" id="section-profile">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-user-circle"
+                                style="margin-right:8px; color:var(--primary-400);"></i>My Profile</h2>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static" style="text-align:center;padding:2.5rem;">
+                            <div style="width:100px;height:100px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;font-size:2.5rem;color:white;font-weight:700;"
+                                id="profile-avatar">S</div>
+                            <h3 id="profile-name" style="font-size:1.3rem;margin-bottom:0.25rem;">Student</h3>
+                            <p class="text-muted" id="profile-role">Student</p>
+                            <div class="badge badge-success mt-2" style="margin-top:0.75rem;"><i
+                                    class="fas fa-check-circle"></i> Active</div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1.25rem;">Account Details</h3>
+                            <div class="list-item"><span class="text-muted">Username</span><span class="font-semibold"
+                                    id="profile-username">—</span></div>
+                            <div class="list-item"><span class="text-muted">Role</span><span
+                                    class="font-semibold">Student</span></div>
+                            <div class="list-item"><span class="text-muted">Face Registered</span><span
+                                    id="profile-face-status"><span class="badge badge-error">No</span></span></div>
+                            <div class="list-item"><span class="text-muted">Total Attendance</span><span
+                                    class="font-semibold" id="profile-total">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <button class="mobile-toggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="/app.js"></script>
+    <script>
+        if (!Auth.requireAuth(['student'])) { /* redirects */ }
+        const currentUser = Auth.getUser();
+        const username = currentUser?.username || 'student';
+        let cameraStream = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCommon();
+            updateStudentDashboard();
+            loadAnnouncements();
+            loadTimetable();
+            loadGrades();
+            FaceModels.load();
+        });
+
+        function updateStudentDashboard() {
+            const records = LocalData.getStudentRecords(username);
+            const students = LocalData.getRegisteredStudents();
+            const isRegistered = !!students[username];
+            const total = records.length;
+            const rate = total > 0 ? Math.min(Math.round((total / 30) * 100), 100) : 0;
+
+            document.getElementById('stat-total').textContent = total;
+            document.getElementById('stat-rate').textContent = rate + '%';
+            document.getElementById('stat-streak').textContent = calculateStreak(records) + ' days';
+            const last = records.length > 0 ? records[records.length - 1] : null;
+            document.getElementById('stat-last').textContent = last ? formatDateTime(last.timestamp) : 'Never';
+
+            if (isRegistered) {
+                document.getElementById('reg-status').innerHTML = `
+                    <div style="width:80px;height:80px;border-radius:50%;background:var(--success-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                        <i class="fas fa-check" style="font-size:2rem;color:var(--success);"></i>
+                    </div>
+                    <p style="font-weight:600;margin-bottom:0.25rem;">Face Registered ✓</p>
+                    <p class="text-muted text-sm">Registered on ${formatDate(students[username].registeredAt)}</p>`;
+            }
+
+            const tbody = document.getElementById('history-table-body');
+            if (records.length > 0) {
+                tbody.innerHTML = records.slice().reverse().map((r, i) => `
+                    <tr><td>${records.length - i}</td><td>${formatDate(r.timestamp)}</td><td>${formatTime(r.timestamp)}</td><td><span class="badge badge-success"><i class="fas fa-check-circle"></i> Present</span></td></tr>
+                `).join('');
+            }
+
+            document.getElementById('profile-username').textContent = username;
+            document.getElementById('profile-name').textContent = username;
+            document.getElementById('profile-avatar').textContent = username[0].toUpperCase();
+            document.getElementById('profile-total').textContent = total;
+            if (isRegistered) document.getElementById('profile-face-status').innerHTML = '<span class="badge badge-success">Yes</span>';
+        }
+
+        function calculateStreak(records) {
+            if (records.length === 0) return 0;
+            let streak = 0;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            for (let i = 0; i <= 30; i++) {
+                const day = new Date(today); day.setDate(day.getDate() - i);
+                if (records.some(r => new Date(r.timestamp).toDateString() === day.toDateString())) { streak++; } else if (i > 0) break;
+            }
+            return streak;
+        }
+
+        // ---- Announcements ----
+        function loadAnnouncements() {
+            const anns = LocalData.getAnnouncements();
+            const container = document.getElementById('announcements-list');
+            const dashAnns = document.getElementById('dash-announcements');
+
+            if (anns.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No announcements yet</p></div>';
+                dashAnns.innerHTML = '<div class="empty-state" style="padding:1rem;"><i class="fas fa-bullhorn"></i><p style="font-size:0.85rem;">No announcements</p></div>';
+                return;
+            }
+
+            const renderAnn = (a) => `
+                <div class="ann-item ${a.priority || ''}">
+                    <div style="display:flex;justify-content:space-between;align-items:start;">
+                        <h4 style="font-size:0.95rem;font-weight:600;">${a.title}</h4>
+                        ${a.priority === 'urgent' ? '<span class="badge badge-error" style="font-size:0.65rem;">URGENT</span>' :
+                    a.priority === 'high' ? '<span class="badge badge-warning" style="font-size:0.65rem;">HIGH</span>' :
+                        `<span class="badge badge-info" style="font-size:0.65rem;">${(a.category || 'general').toUpperCase()}</span>`}
+                    </div>
+                    <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.4rem;line-height:1.5;">${a.content}</p>
+                    <div class="ann-meta">
+                        <i class="fas fa-user-tie"></i><span>${a.authorName || 'Staff'}</span>
+                        <span>•</span><span>${timeAgo(a.createdAt)}</span>
+                    </div>
+                </div>`;
+
+            container.innerHTML = anns.map(renderAnn).join('');
+            dashAnns.innerHTML = anns.slice(0, 3).map(renderAnn).join('');
+        }
+
+        // ---- Timetable ----
+        function loadTimetable() {
+            const timetables = LocalData.getAllTimetables();
+            const container = document.getElementById('timetable-container');
+            const classNames = Object.keys(timetables);
+
+            if (classNames.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-alt"></i><p>No timetable available yet. Your teacher or admin will publish it.</p></div>';
+                return;
+            }
+
+            // Show first available timetable
+            const tt = timetables[classNames[0]];
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+            // Find all unique time slots
+            const allTimes = new Set();
+            days.forEach(d => (tt.schedule[d] || []).forEach(p => allTimes.add(p.startTime)));
+            const times = [...allTimes].sort();
+
+            if (times.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar-alt"></i><p>Timetable is empty</p></div>';
+                return;
+            }
+
+            let html = `<h3 style="margin-bottom:1rem;"><i class="fas fa-calendar-alt" style="margin-right:8px;color:var(--primary-400);"></i>${classNames[0]}</h3>`;
+            html += `<div class="timetable-grid">`;
+            html += `<div class="tt-header">Time</div>`;
+            dayLabels.forEach(d => html += `<div class="tt-header">${d}</div>`);
+
+            times.forEach(time => {
+                html += `<div class="tt-time">${time}</div>`;
+                days.forEach(d => {
+                    const period = (tt.schedule[d] || []).find(p => p.startTime === time);
+                    html += period ? `<div class="tt-cell has-class"><strong>${period.subject}</strong><br><span style="font-size:0.7rem;color:var(--text-muted);">${period.room || ''}</span></div>` : `<div class="tt-cell">—</div>`;
+                });
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        // ---- Grades ----
+        function loadGrades() {
+            const grades = LocalData.getGradesByStudent(username);
+            const container = document.getElementById('grades-container');
+
+            if (grades.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-award"></i><p>No grades published yet. Check back after exams.</p></div>';
+                return;
+            }
+
+            // Group by semester
+            const semesters = {};
+            grades.forEach(g => {
+                if (!semesters[g.semester]) semesters[g.semester] = [];
+                semesters[g.semester].push(g);
+            });
+
+            const gradeColors = { 'O': 'var(--success)', 'A+': '#22d3ee', 'A': 'var(--info)', 'B+': 'var(--primary-400)', 'B': 'var(--warning)', 'C': '#f97316', 'D': 'var(--error)', 'F': '#dc2626' };
+
+            let html = '';
+            Object.entries(semesters).sort((a, b) => a[0].localeCompare(b[0])).forEach(([sem, grades]) => {
+                const totalCredits = grades.reduce((s, g) => s + (g.credits || 3), 0);
+                const gradePoints = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'F': 0 };
+                const earnedPts = grades.reduce((s, g) => s + (gradePoints[g.grade] || 0) * (g.credits || 3), 0);
+                const gpa = totalCredits > 0 ? (earnedPts / totalCredits).toFixed(2) : '0.00';
+
+                html += `<div style="margin-bottom:2rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                        <h3 style="font-size:1rem;"><i class="fas fa-bookmark" style="margin-right:8px;color:var(--primary-400);"></i>${sem}</h3>
+                        <span class="badge badge-info">GPA: ${gpa}</span>
+                    </div>
+                    <div class="table-wrapper"><table><thead><tr><th>Subject</th><th>Marks</th><th>Grade</th><th>Credits</th><th>Progress</th></tr></thead><tbody>`;
+                grades.forEach(g => {
+                    const pct = g.marks ? Math.round((g.marks.total / g.marks.maxMarks) * 100) : 0;
+                    const color = gradeColors[g.grade] || 'var(--text-muted)';
+                    html += `<tr>
+                        <td style="font-weight:500;">${g.subject}</td>
+                        <td>${g.marks?.total || 0}/${g.marks?.maxMarks || 100}</td>
+                        <td><span class="badge" style="background:${color}22;color:${color};font-weight:700;">${g.grade}</span></td>
+                        <td>${g.credits || 3}</td>
+                        <td style="min-width:120px;"><div class="grade-bar"><div class="grade-bar-fill" style="width:${pct}%;background:${color};"></div></div></td>
+                    </tr>`;
+                });
+                html += `</tbody></table></div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        // ---- Camera ----
+        async function startCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+                document.getElementById('student-video').srcObject = cameraStream;
+            } catch { Toast.error('Camera access denied.'); }
+        }
+
+        document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.dataset.section === 'section-register') startCamera();
+                else if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+            });
+        });
+
+        document.getElementById('btn-capture').addEventListener('click', async () => {
+            const video = document.getElementById('student-video');
+            const canvas = document.getElementById('student-canvas');
+            const resultDiv = document.getElementById('capture-result');
+            const btn = document.getElementById('btn-capture');
+
+            if (!video.srcObject) { Toast.warning('Camera starting...'); await startCamera(); return; }
+            btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Processing...';
+
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            try {
+                if (FaceModels.loaded) {
+                    const det = await faceapi.detectSingleFace(canvas).withFaceLandmarks().withFaceDescriptor();
+                    if (det) {
+                        LocalData.addStudent(username, Array.from(det.descriptor));
+                        resultDiv.innerHTML = '<div class="scan-result success"><i class="fas fa-check-circle"></i> Face registered with AI recognition!</div>';
+                        Toast.success('Face registered!'); updateStudentDashboard();
+                    } else {
+                        resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> No face detected. Try again.</div>';
+                    }
+                } else {
+                    LocalData.addStudent(username, 'basic_capture');
+                    resultDiv.innerHTML = '<div class="scan-result warning"><i class="fas fa-exclamation-triangle"></i> Captured in basic mode</div>';
+                    Toast.warning('Captured in basic mode.'); updateStudentDashboard();
+                }
+            } catch (err) { resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> Error. Try again.</div>'; }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-camera"></i> Capture & Register Face';
+        });
+
+        // ---- Bus Routes (Dynamic from LocalData) ----
+        function renderBusRoutes() {
+            const routes = LocalData.getBusRoutes();
+            const container = document.getElementById('bus-routes-container');
+            if (routes.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-bus"></i><p>No bus routes available yet. The Transport Incharge will add them.</p></div>';
+                return;
+            }
+            container.innerHTML = routes.map(r => `
+                <div class="bus-route-card">
+                    <div class="bus-route-header">
+                        <div class="bus-route-number" style="background:${r.color || '#6366f1'};">${r.number}</div>
+                        <div style="flex:1;">
+                            <h4 style="font-size:0.95rem;font-weight:700;">${r.name}</h4>
+                            <p style="font-size:0.75rem;color:var(--text-muted);"><i class="far fa-clock" style="margin-right:4px;"></i>${r.timing}</p>
+                        </div>
+                        ${r.whatsapp ? `<a href="${r.whatsapp}" target="_blank" rel="noopener" class="wa-btn"><i class="fab fa-whatsapp"></i> View WhatsApp Group</a>` : ''}
+                    </div>
+                    <div class="bus-route-stops">
+                        ${(r.stops || []).map((s, i) => `<span class="bus-stop ${i === 0 ? 'start' : i === r.stops.length - 1 ? 'end' : ''}">${i === 0 ? '<i class="fas fa-play" style="font-size:0.5rem;margin-right:2px;"></i>' : i === r.stops.length - 1 ? '<i class="fas fa-flag-checkered" style="font-size:0.5rem;margin-right:2px;"></i>' : ''}${s}</span>`).join('<span style="color:var(--text-muted);font-size:0.6rem;">→</span>')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ---- Bus Notices ----
+        function renderBusNotices() {
+            const notices = LocalData.getBusNotices();
+            const c = document.getElementById('bus-notices-container');
+            if (notices.length === 0) {
+                c.innerHTML = '<div class="empty-state"><i class="fas fa-bell"></i><p>No transport notices</p></div>';
+                return;
+            }
+            c.innerHTML = notices.map(n => `<div class="bus-notice-item ${n.priority || ''}">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <h4 style="font-size:0.95rem;font-weight:600;">${n.title}</h4>
+                    <span style="font-size:0.65rem;padding:0.2rem 0.5rem;border-radius:var(--radius-full);background:${n.priority === 'urgent' ? 'rgba(239,68,68,0.15);color:var(--error)' : n.priority === 'high' ? 'rgba(245,158,11,0.15);color:#f59e0b' : 'rgba(99,102,241,0.15);color:var(--info)'};font-weight:600;">${(n.priority || 'normal').toUpperCase()}</span>
+                </div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.4rem;line-height:1.5;">${n.content}</p>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">
+                    <i class="fas fa-bus"></i><span>${n.authorName || 'Transport Incharge'}</span>
+                    <span>•</span><span>${timeAgo(n.createdAt)}</span>
+                </div>
+            </div>`).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { renderBusRoutes(); renderBusNotices(); });
+    </script>
+</body>
+
+</html>

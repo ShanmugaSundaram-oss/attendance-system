@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard — RIT Smart IMS</title>
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .scanner-status {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            z-index: 2;
+        }
+
+        .scanner-status.ready {
+            color: var(--success);
+        }
+
+        .scanner-status.offline {
+            color: var(--warning);
+        }
+
+        .today-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius-sm);
+            transition: background 0.15s;
+        }
+
+        .today-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .today-item+.today-item {
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .student-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .student-row-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: white;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .ann-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.75rem;
+            border-left: 3px solid var(--primary-400);
+            transition: all 0.2s;
+        }
+
+        .ann-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ann-item.urgent {
+            border-left-color: var(--error);
+        }
+
+        .ann-item.high {
+            border-left-color: var(--warning);
+        }
+
+        .ann-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        .bus-route-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-md);
+            padding: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .bus-route-card:hover {
+            background: rgba(212, 168, 67, 0.06);
+            border-color: rgba(212, 168, 67, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .bus-route-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .bus-route-number {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .bus-route-stops {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+
+        .bus-stop {
+            font-size: 0.72rem;
+            padding: 0.2rem 0.5rem;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+        }
+
+        .bus-stop.start {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .bus-stop.end {
+            background: rgba(212, 168, 67, 0.12);
+            color: var(--primary-400);
+            font-weight: 600;
+        }
+
+        .canteen-hero {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .canteen-logo {
+            width: 100px;
+            height: 100px;
+            border-radius: var(--radius-xl);
+            background: linear-gradient(135deg, #ff6b35, #f7931a);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: white;
+            margin: 0 auto 1.5rem;
+            box-shadow: 0 8px 32px rgba(255, 107, 53, 0.3);
+        }
+
+        .order-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #ff6b35, #f7931a);
+            border: none;
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
+            text-decoration: none;
+        }
+
+        .order-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(255, 107, 53, 0.45);
+        }
+
+        .order-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .wa-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 0.35rem 0.75rem;
+            background: rgba(37, 211, 102, 0.15);
+            color: #25d366;
+            border: 1px solid rgba(37, 211, 102, 0.25);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .wa-btn:hover {
+            background: rgba(37, 211, 102, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .bus-notice-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #f59e0b;
+            transition: all 0.2s;
+        }
+
+        .bus-notice-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .bus-notice-item.urgent {
+            border-left-color: var(--error);
+        }
+
+        .bus-notice-item.high {
+            border-left-color: #f59e0b;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animated"></div>
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon"><img src="/logo.png" alt="RIT"></div>
+                <div>
+                    <div class="sidebar-brand-text">RIT Smart IMS</div>
+                    <div class="sidebar-brand-sub">Teacher Portal</div>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="sidebar-section-title">Attendance</div>
+                <button class="nav-item active" data-section="section-dashboard"><i class="fas fa-th-large"></i>
+                    Dashboard</button>
+                <button class="nav-item" data-section="section-scanner"><i class="fas fa-camera"></i> Face
+                    Scanner</button>
+                <button class="nav-item" data-section="section-reports"><i class="fas fa-chart-bar"></i>
+                    Reports</button>
+                <button class="nav-item" data-section="section-students"><i class="fas fa-users"></i> Students</button>
+                <div class="sidebar-section-title">Management</div>
+                <button class="nav-item" data-section="section-announcements"><i class="fas fa-bullhorn"></i>
+                    Announcements</button>
+                <button class="nav-item" data-section="section-grades"><i class="fas fa-award"></i> Grade Entry</button>
+                <button class="nav-item" data-section="section-timetable"><i class="fas fa-calendar-alt"></i>
+                    Timetable</button>
+                <div class="sidebar-section-title">Campus</div>
+                <button class="nav-item" data-section="section-busroutes"><i class="fas fa-bus"></i> Bus Routes</button>
+                <button class="nav-item" data-section="section-busnotices"><i class="fas fa-bell"
+                        style="color:#f59e0b;"></i> Bus Notices</button>
+                <button class="nav-item" data-section="section-canteen"><i class="fas fa-utensils"></i> Canteen</button>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <div class="sidebar-avatar" id="sidebar-avatar">T</div>
+                    <div class="sidebar-user-info">
+                        <div class="sidebar-user-name" id="sidebar-user-name">Teacher</div>
+                        <div class="sidebar-user-role" id="sidebar-user-role">teacher</div>
+                    </div>
+                </div>
+                <button class="btn btn-ghost btn-block btn-sm" onclick="Auth.logout()" style="margin-top:0.75rem;"><i
+                        class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="topbar">
+                <h1 class="topbar-title"><i class="fas fa-chalkboard-teacher"
+                        style="margin-right:8px;color:var(--success);"></i>Teacher Dashboard</h1>
+                <div class="topbar-right"><span class="topbar-time"><i class="far fa-clock"></i><span
+                            id="topbar-time"></span></span></div>
+            </div>
+            <div class="page-content">
+
+                <!-- Dashboard -->
+                <div class="section-panel active" id="section-dashboard">
+                    <div class="grid grid-4" style="margin-bottom:1.5rem;">
+                        <div class="stat-card animate-slide-up delay-1">
+                            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Registered Students</div>
+                                <div class="stat-value" id="stat-students">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-2">
+                            <div class="stat-icon green"><i class="fas fa-calendar-check"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Present Today</div>
+                                <div class="stat-value" id="stat-today">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-3">
+                            <div class="stat-icon purple"><i class="fas fa-percentage"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Today's Rate</div>
+                                <div class="stat-value" id="stat-rate">0%</div>
+                            </div>
+                        </div>
+                        <div class="stat-card animate-slide-up delay-4">
+                            <div class="stat-icon yellow"><i class="fas fa-bullhorn"></i></div>
+                            <div class="stat-info">
+                                <div class="stat-label">Announcements</div>
+                                <div class="stat-value" id="stat-anns">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <div class="flex items-center justify-between" style="margin-bottom:1rem;">
+                                <h3><i class="fas fa-camera" style="margin-right:8px;color:var(--success);"></i>Quick
+                                    Actions</h3>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                <button class="btn btn-success btn-block"
+                                    onclick="document.querySelector('[data-section=section-scanner]').click()"><i
+                                        class="fas fa-camera"></i> Scan Attendance</button>
+                                <button class="btn btn-primary btn-block"
+                                    onclick="document.querySelector('[data-section=section-announcements]').click()"><i
+                                        class="fas fa-bullhorn"></i> Post Notice</button>
+                                <button class="btn btn-ghost btn-block"
+                                    onclick="document.querySelector('[data-section=section-grades]').click()"><i
+                                        class="fas fa-award"></i> Enter Grades</button>
+                                <button class="btn btn-ghost btn-block"
+                                    onclick="document.querySelector('[data-section=section-timetable]').click()"><i
+                                        class="fas fa-calendar-alt"></i> Timetable</button>
+                            </div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-list-check"
+                                    style="margin-right:8px;color:var(--primary-400);"></i>Today's Attendance</h3>
+                            <div id="today-list" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-inbox"></i>
+                                    <p>No records today</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scanner -->
+                <div class="section-panel" id="section-scanner">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-camera"
+                                style="margin-right:8px;color:var(--success);"></i>Face Recognition Scanner</h2>
+                        <p class="page-subtitle">Scan faces to mark attendance</p>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Camera Feed</h3>
+                            <div class="camera-container" style="margin-bottom:1rem;position:relative;">
+                                <video id="teacher-video" autoplay playsinline></video>
+                                <div class="camera-overlay">
+                                    <div class="camera-crosshair"></div>
+                                </div>
+                                <div class="scanner-status offline" id="scanner-status"><span>Initializing...</span>
+                                </div>
+                            </div>
+                            <canvas id="teacher-canvas" style="display:none;"></canvas>
+                            <button class="btn btn-success btn-block btn-lg" id="btn-scan"><i class="fas fa-search"></i>
+                                Scan for Attendance</button>
+                            <div id="scan-result" style="margin-top:1rem;"></div>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Scan History (Today)</h3>
+                            <div id="scan-history" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-inbox"></i>
+                                    <p>Start scanning</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports -->
+                <div class="section-panel" id="section-reports">
+                    <div class="page-header">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="page-title"><i class="fas fa-chart-bar"
+                                        style="margin-right:8px;color:var(--primary-400);"></i>Attendance Reports</h2>
+                            </div>
+                            <button class="btn btn-ghost btn-sm" onclick="exportToCSV()"><i class="fas fa-download"></i>
+                                Export CSV</button>
+                        </div>
+                    </div>
+                    <div class="card-static" style="margin-bottom:1.5rem;">
+                        <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                            <div class="form-group" style="margin-bottom:0;flex:1;min-width:160px;"><label
+                                    class="form-label">From</label><input type="date" id="filter-from"
+                                    class="form-input"></div>
+                            <div class="form-group" style="margin-bottom:0;flex:1;min-width:160px;"><label
+                                    class="form-label">To</label><input type="date" id="filter-to" class="form-input">
+                            </div>
+                            <div style="padding-top:1.5rem;"><button class="btn btn-primary btn-sm"
+                                    onclick="filterRecords()"><i class="fas fa-filter"></i> Filter</button></div>
+                        </div>
+                    </div>
+                    <div class="card-static">
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Student</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-table-body">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted" style="padding:3rem;">No records
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Students -->
+                <div class="section-panel" id="section-students">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-users"
+                                style="margin-right:8px;color:var(--primary-400);"></i>Registered Students</h2>
+                    </div>
+                    <div class="card-static" id="students-list">
+                        <div class="empty-state"><i class="fas fa-users"></i>
+                            <p>No students registered</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Announcements (Post) -->
+                <div class="section-panel" id="section-announcements">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bullhorn"
+                                style="margin-right:8px;color:var(--warning);"></i>Announcements</h2>
+                        <p class="page-subtitle">Post notices for students</p>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                    style="margin-right:6px;color:var(--success);"></i>New Announcement</h3>
+                            <form id="ann-form">
+                                <div class="form-group"><label class="form-label">Title</label><input type="text"
+                                        id="ann-title" class="form-input" placeholder="Announcement title" required>
+                                </div>
+                                <div class="form-group"><label class="form-label">Content</label><textarea
+                                        id="ann-content" class="form-input" rows="4"
+                                        placeholder="Write your announcement..." required></textarea></div>
+                                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                    <div class="form-group"><label class="form-label">Category</label>
+                                        <select id="ann-category" class="form-input">
+                                            <option value="general">General</option>
+                                            <option value="academic">Academic</option>
+                                            <option value="exam">Exam</option>
+                                            <option value="event">Event</option>
+                                            <option value="holiday">Holiday</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group"><label class="form-label">Priority</label>
+                                        <select id="ann-priority" class="form-input">
+                                            <option value="normal">Normal</option>
+                                            <option value="low">Low</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-success btn-block"><i
+                                        class="fas fa-paper-plane"></i> Publish</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Published Announcements</h3>
+                            <div id="teacher-anns-list" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-bullhorn"></i>
+                                    <p>No announcements yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grade Entry -->
+                <div class="section-panel" id="section-grades">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-award"
+                                style="margin-right:8px;color:var(--success);"></i>Grade Entry</h2>
+                        <p class="page-subtitle">Enter marks for students</p>
+                    </div>
+                    <div class="grid grid-1-1">
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                    style="margin-right:6px;color:var(--success);"></i>Enter Grade</h3>
+                            <form id="grade-form">
+                                <div class="form-group"><label class="form-label">Student Username</label><input
+                                        type="text" id="grade-student" class="form-input" placeholder="e.g. student1"
+                                        required></div>
+                                <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+                                    <div class="form-group"><label class="form-label">Subject</label><input type="text"
+                                            id="grade-subject" class="form-input" placeholder="e.g. Mathematics"
+                                            required></div>
+                                    <div class="form-group"><label class="form-label">Semester</label><input type="text"
+                                            id="grade-semester" class="form-input" placeholder="e.g. Sem 1" required>
+                                    </div>
+                                </div>
+                                <div class="form-row"
+                                    style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
+                                    <div class="form-group"><label class="form-label">Internal</label><input
+                                            type="number" id="grade-internal" class="form-input" value="0" min="0"
+                                            max="50"></div>
+                                    <div class="form-group"><label class="form-label">External</label><input
+                                            type="number" id="grade-external" class="form-input" value="0" min="0"
+                                            max="100"></div>
+                                    <div class="form-group"><label class="form-label">Max Marks</label><input
+                                            type="number" id="grade-max" class="form-input" value="100" min="1"></div>
+                                </div>
+                                <div class="form-group"><label class="form-label">Credits</label><input type="number"
+                                        id="grade-credits" class="form-input" value="3" min="1" max="10"></div>
+                                <button type="submit" class="btn btn-success btn-block"><i class="fas fa-save"></i> Save
+                                    Grade</button>
+                            </form>
+                        </div>
+                        <div class="card-static">
+                            <h3 style="margin-bottom:1rem;">Recent Grades</h3>
+                            <div id="grades-list" class="overflow-auto max-h-400">
+                                <div class="empty-state"><i class="fas fa-award"></i>
+                                    <p>No grades entered</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timetable Management -->
+                <div class="section-panel" id="section-timetable">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-calendar-alt"
+                                style="margin-right:8px;color:var(--primary-400);"></i>Timetable Management</h2>
+                        <p class="page-subtitle">Create and manage class schedules</p>
+                    </div>
+                    <div class="card-static">
+                        <h3 style="margin-bottom:1rem;"><i class="fas fa-plus-circle"
+                                style="margin-right:6px;color:var(--success);"></i>Add/Update Timetable</h3>
+                        <form id="timetable-form">
+                            <div class="form-group"><label class="form-label">Class Name</label><input type="text"
+                                    id="tt-class" class="form-input" placeholder="e.g. CSE-A Sem 3" required></div>
+                            <div id="tt-days-container"></div>
+                            <button type="button" class="btn btn-ghost btn-sm" onclick="addPeriodRow()"
+                                style="margin-bottom:1rem;"><i class="fas fa-plus"></i> Add Period</button>
+                            <button type="submit" class="btn btn-success btn-block"><i class="fas fa-save"></i> Save
+                                Timetable</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Bus Routes -->
+                <div class="section-panel" id="section-busroutes">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bus"
+                                style="margin-right:8px; color:var(--info);"></i>Bus Routes</h2>
+                        <p class="page-subtitle">View all campus bus routes and timings</p>
+                    </div>
+                    <div class="grid grid-2" id="bus-routes-container"></div>
+                </div>
+
+                <!-- Bus Notices -->
+                <div class="section-panel" id="section-busnotices">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-bell" style="margin-right:8px; color:#f59e0b;"></i>Bus
+                            Notices</h2>
+                        <p class="page-subtitle">Transport updates from the Transport Incharge</p>
+                    </div>
+                    <div class="card-static" id="bus-notices-container">
+                        <div class="empty-state"><i class="fas fa-bell"></i>
+                            <p>No transport notices</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canteen -->
+                <div class="section-panel" id="section-canteen">
+                    <div class="page-header">
+                        <h2 class="page-title"><i class="fas fa-utensils"
+                                style="margin-right:8px; color:#ff6b35;"></i>Canteen — BillBot</h2>
+                        <p class="page-subtitle">Order food from the campus canteen</p>
+                    </div>
+                    <div class="card-static">
+                        <div class="canteen-hero">
+                            <div class="canteen-logo"><i class="fas fa-hamburger"></i></div>
+                            <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:0.5rem;">Campus Canteen</h2>
+                            <p style="color:var(--text-secondary);margin-bottom:0.5rem;font-size:0.95rem;">Powered by
+                                <strong>BillBot</strong> × POS Easy
+                            </p>
+                            <p
+                                style="color:var(--text-muted);margin-bottom:2rem;font-size:0.85rem;max-width:400px;margin-left:auto;margin-right:auto;">
+                                Browse the menu, place your order online, and pick it up from the canteen counter. No
+                                more waiting in long queues!</p>
+                            <a href="https://public.positeasy.in/7efd859e-a0f7-4864-a70b-69f918b99c4b/Store1s/dashboard/menu"
+                                target="_blank" rel="noopener" class="order-btn">
+                                <i class="fas fa-shopping-cart"></i> Order Now
+                            </a>
+                            <p style="color:var(--text-muted);margin-top:1.5rem;font-size:0.75rem;"><i
+                                    class="fas fa-external-link-alt" style="margin-right:4px;"></i>Opens in a new tab —
+                                POS Easy ordering portal</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    <button class="mobile-toggle" aria-label="Menu"><i class="fas fa-bars"></i></button>
+
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="/app.js"></script>
+    <script>
+        if (!Auth.requireAuth(['teacher', 'admin'])) { }
+
+        const teacherUser = Auth.getUser();
+        let cameraStream = null;
+        let periodCount = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCommon();
+            updateTeacherDashboard();
+            loadTeacherAnns();
+            loadGradesList();
+            FaceModels.load().then(s => { if (s) updateScannerStatus('ready'); });
+            addPeriodRow(); addPeriodRow(); addPeriodRow(); // Start with 3 rows
+        });
+
+        function updateTeacherDashboard() {
+            const students = LocalData.getRegisteredStudents();
+            const todayRecs = LocalData.getTodayRecords();
+            const allRecs = LocalData.getAllRecords();
+            const totalStudents = Object.keys(students).length;
+
+            document.getElementById('stat-students').textContent = totalStudents;
+            document.getElementById('stat-today').textContent = todayRecs.length;
+            document.getElementById('stat-rate').textContent = totalStudents > 0 ? Math.round((todayRecs.length / totalStudents) * 100) + '%' : '0%';
+            document.getElementById('stat-anns').textContent = LocalData.getAnnouncements().length;
+
+            // Today's list
+            const container = document.getElementById('today-list');
+            if (todayRecs.length === 0) { container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>No records today</p></div>'; }
+            else { container.innerHTML = todayRecs.slice().reverse().map(r => `<div class="today-item"><div class="student-row"><div class="student-row-avatar">${r.username[0].toUpperCase()}</div><div><div style="font-size:0.88rem;font-weight:600;">${r.username}</div><div class="text-sm text-muted">${formatTime(r.timestamp)}</div></div></div><span class="badge badge-success">Present</span></div>`).join(''); }
+
+            // Scan history
+            renderScanHistory(todayRecs);
+            // Reports
+            renderReportTable(allRecs);
+            // Students list
+            renderStudentsList(students, allRecs);
+        }
+
+        function renderScanHistory(recs) {
+            const c = document.getElementById('scan-history');
+            if (recs.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Start scanning</p></div>'; return; }
+            c.innerHTML = recs.slice().reverse().map(r => `<div class="today-item"><div class="student-row"><div class="student-row-avatar">${r.username[0].toUpperCase()}</div><div><div style="font-size:0.88rem;font-weight:600;">${r.username}</div><div class="text-sm text-muted">${formatDateTime(r.timestamp)}</div></div></div><span class="badge badge-success">Present</span></div>`).join('');
+        }
+
+        function renderReportTable(recs) {
+            const tbody = document.getElementById('report-table-body');
+            if (recs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:3rem;">No records</td></tr>'; return; }
+            tbody.innerHTML = recs.slice().reverse().map((r, i) => `<tr><td>${recs.length - i}</td><td><div class="student-row"><div class="student-row-avatar">${r.username[0].toUpperCase()}</div><span style="font-weight:500;">${r.username}</span></div></td><td>${formatDate(r.timestamp)}</td><td>${formatTime(r.timestamp)}</td><td><span class="badge badge-success">Present</span></td></tr>`).join('');
+        }
+
+        function renderStudentsList(students, allRecs) {
+            const c = document.getElementById('students-list');
+            const names = Object.keys(students);
+            if (names.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>No students registered</p></div>'; return; }
+            c.innerHTML = `<div class="table-wrapper"><table><thead><tr><th>Student</th><th>Registered</th><th>Days</th><th>Face</th></tr></thead><tbody>${names.map(n => {
+                const recs = allRecs.filter(r => r.username === n);
+                return `<tr><td><div class="student-row"><div class="student-row-avatar">${n[0].toUpperCase()}</div><span style="font-weight:500;">${n}</span></div></td><td>${formatDate(students[n].registeredAt)}</td><td><strong>${recs.length}</strong></td><td><span class="badge badge-success"><i class="fas fa-check"></i></span></td></tr>`;
+            }).join('')}</tbody></table></div>`;
+        }
+
+        // ---- Camera ----
+        async function startTeacherCamera() {
+            try {
+                cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+                document.getElementById('teacher-video').srcObject = cameraStream;
+                updateScannerStatus(FaceModels.loaded ? 'ready' : 'offline');
+            } catch { Toast.error('Camera denied.'); }
+        }
+
+        function updateScannerStatus(status) {
+            const el = document.getElementById('scanner-status');
+            if (!el) return;
+            if (status === 'ready') { el.className = 'scanner-status ready'; el.innerHTML = '<span>AI Ready</span>'; }
+            else { el.className = 'scanner-status offline'; el.innerHTML = '<span>Basic Mode</span>'; }
+        }
+
+        document.querySelectorAll('.nav-item[data-section]').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.dataset.section === 'section-scanner') startTeacherCamera();
+                else if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+            });
+        });
+
+        // ---- Scan ----
+        document.getElementById('btn-scan').addEventListener('click', async () => {
+            const video = document.getElementById('teacher-video');
+            const canvas = document.getElementById('teacher-canvas');
+            const resultDiv = document.getElementById('scan-result');
+            const btn = document.getElementById('btn-scan');
+
+            if (!video.srcObject) { await startTeacherCamera(); return; }
+            btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Scanning...';
+
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            const students = LocalData.getRegisteredStudents();
+            const names = Object.keys(students);
+            if (names.length === 0) { resultDiv.innerHTML = '<div class="scan-result warning"><i class="fas fa-exclamation-triangle"></i> No registered students.</div>'; btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Scan for Attendance'; return; }
+
+            try {
+                if (FaceModels.loaded) {
+                    const det = await faceapi.detectSingleFace(canvas).withFaceLandmarks().withFaceDescriptor();
+                    if (det) {
+                        const labeled = [];
+                        for (const [n, info] of Object.entries(students)) {
+                            if (Array.isArray(info.descriptor)) labeled.push(new faceapi.LabeledFaceDescriptors(n, [new Float32Array(info.descriptor)]));
+                        }
+                        if (labeled.length > 0) {
+                            const match = new faceapi.FaceMatcher(labeled, 0.6).findBestMatch(det.descriptor);
+                            const conf = Math.round((1 - match.distance) * 100);
+                            if (match.label !== 'unknown') {
+                                const res = LocalData.markAttendance(match.label);
+                                resultDiv.innerHTML = `<div class="scan-result ${res.success ? 'success' : 'warning'}"><i class="fas fa-${res.success ? 'check' : 'info'}-circle"></i> <strong>${match.label}</strong> — ${res.message} (${conf}%)</div>`;
+                                Toast[res.success ? 'success' : 'warning'](res.message);
+                            } else { resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> Face not recognised.</div>'; }
+                        } else { resultDiv.innerHTML = '<div class="scan-result warning"><i class="fas fa-exclamation-triangle"></i> No valid face descriptors.</div>'; }
+                    } else { resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> No face detected.</div>'; }
+                } else {
+                    const today = LocalData.getTodayRecords();
+                    const unmarked = names.filter(n => !today.some(r => r.username === n));
+                    if (unmarked.length > 0) { const n = unmarked[0]; const res = LocalData.markAttendance(n); resultDiv.innerHTML = `<div class="scan-result success"><i class="fas fa-check-circle"></i> <strong>${n}</strong> — ${res.message}</div>`; Toast.success(res.message); }
+                    else { resultDiv.innerHTML = '<div class="scan-result warning"><i class="fas fa-info-circle"></i> All marked.</div>'; }
+                }
+                updateTeacherDashboard();
+            } catch (err) { resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> Scan error.</div>'; }
+            btn.disabled = false; btn.innerHTML = '<i class="fas fa-search"></i> Scan for Attendance';
+        });
+
+        // ---- Announcements ----
+        document.getElementById('ann-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const ann = {
+                title: document.getElementById('ann-title').value.trim(),
+                content: document.getElementById('ann-content').value.trim(),
+                category: document.getElementById('ann-category').value,
+                priority: document.getElementById('ann-priority').value,
+                authorName: teacherUser?.username || 'Teacher',
+                authorRole: 'teacher'
+            };
+            LocalData.addAnnouncement(ann);
+            Toast.success('Announcement published!');
+            document.getElementById('ann-form').reset();
+            loadTeacherAnns();
+            updateTeacherDashboard();
+        });
+
+        function loadTeacherAnns() {
+            const anns = LocalData.getAnnouncements();
+            const c = document.getElementById('teacher-anns-list');
+            if (anns.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-bullhorn"></i><p>No announcements</p></div>'; return; }
+            c.innerHTML = anns.map(a => `<div class="ann-item ${a.priority || ''}">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <h4 style="font-size:0.95rem;font-weight:600;">${a.title}</h4>
+                    <button class="btn btn-ghost btn-sm" onclick="deleteAnn('${a.id}')" style="padding:2px 6px;font-size:0.7rem;color:var(--error);"><i class="fas fa-trash"></i></button>
+                </div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.4rem;">${a.content}</p>
+                <div class="ann-meta"><span class="badge badge-info" style="font-size:0.6rem;">${(a.category || 'general').toUpperCase()}</span><span>•</span><span>${timeAgo(a.createdAt)}</span></div>
+            </div>`).join('');
+        }
+
+        function deleteAnn(id) { LocalData.deleteAnnouncement(id); Toast.info('Deleted.'); loadTeacherAnns(); updateTeacherDashboard(); }
+
+        // ---- Grades ----
+        document.getElementById('grade-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const internal = parseInt(document.getElementById('grade-internal').value) || 0;
+            const external = parseInt(document.getElementById('grade-external').value) || 0;
+            const maxMarks = parseInt(document.getElementById('grade-max').value) || 100;
+
+            const grade = {
+                studentName: document.getElementById('grade-student').value.trim(),
+                subject: document.getElementById('grade-subject').value.trim(),
+                semester: document.getElementById('grade-semester').value.trim(),
+                marks: { internal, external, total: internal + external, maxMarks },
+                credits: parseInt(document.getElementById('grade-credits').value) || 3,
+                teacherName: teacherUser?.username || 'Teacher'
+            };
+            LocalData.addGrade(grade);
+            Toast.success(`Grade saved for ${grade.studentName}: ${grade.subject}`);
+            document.getElementById('grade-form').reset();
+            document.getElementById('grade-credits').value = '3';
+            document.getElementById('grade-max').value = '100';
+            loadGradesList();
+        });
+
+        function loadGradesList() {
+            const grades = LocalData.getAllGrades();
+            const c = document.getElementById('grades-list');
+            if (grades.length === 0) { c.innerHTML = '<div class="empty-state"><i class="fas fa-award"></i><p>No grades entered</p></div>'; return; }
+            c.innerHTML = grades.slice().reverse().map(g => `<div class="today-item">
+                <div><div style="font-size:0.88rem;font-weight:600;">${g.studentName} — ${g.subject}</div><div class="text-sm text-muted">${g.semester} • ${g.marks?.total || 0}/${g.marks?.maxMarks || 100}</div></div>
+                <span class="badge" style="font-weight:700;">${g.grade}</span>
+            </div>`).join('');
+        }
+
+        // ---- Timetable ----
+        function addPeriodRow() {
+            periodCount++;
+            const container = document.getElementById('tt-days-container');
+            const row = document.createElement('div');
+            row.className = 'form-row';
+            row.style.cssText = 'display:grid;grid-template-columns:100px 1fr 1fr 80px 40px;gap:0.5rem;margin-bottom:0.5rem;align-items:end;';
+            row.innerHTML = `
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:0.7rem;">Day</label><select class="form-input" style="font-size:0.8rem;padding:0.4rem;"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:0.7rem;">Subject</label><input class="form-input" placeholder="Subject" style="font-size:0.8rem;padding:0.4rem;"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:0.7rem;">Time</label><input class="form-input" placeholder="09:00" style="font-size:0.8rem;padding:0.4rem;"></div>
+                <div class="form-group" style="margin-bottom:0;"><label class="form-label" style="font-size:0.7rem;">Room</label><input class="form-input" placeholder="A01" style="font-size:0.8rem;padding:0.4rem;"></div>
+                <button type="button" class="btn btn-ghost btn-sm" onclick="this.parentElement.remove()" style="color:var(--error);padding:0.4rem;font-size:0.8rem;"><i class="fas fa-times"></i></button>`;
+            container.appendChild(row);
+        }
+
+        document.getElementById('timetable-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const className = document.getElementById('tt-class').value.trim();
+            if (!className) { Toast.error('Enter class name'); return; }
+
+            const rows = document.getElementById('tt-days-container').children;
+            const schedule = { monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [] };
+            const dayMap = { Monday: 'monday', Tuesday: 'tuesday', Wednesday: 'wednesday', Thursday: 'thursday', Friday: 'friday', Saturday: 'saturday' };
+
+            Array.from(rows).forEach(row => {
+                const inputs = row.querySelectorAll('input, select');
+                const day = dayMap[inputs[0].value] || 'monday';
+                const subject = inputs[1].value.trim();
+                const time = inputs[2].value.trim();
+                const room = inputs[3].value.trim();
+                if (subject && time) {
+                    schedule[day].push({ startTime: time, endTime: '', subject, teacher: teacherUser?.username || '', room });
+                }
+            });
+
+            LocalData.saveTimetable(className, schedule);
+            Toast.success(`Timetable saved for ${className}`);
+        });
+
+        // ---- Reports Filter & Export ----
+        function filterRecords() {
+            const from = document.getElementById('filter-from').value;
+            const to = document.getElementById('filter-to').value;
+            let recs = LocalData.getAllRecords();
+            if (from) recs = recs.filter(r => new Date(r.timestamp) >= new Date(from));
+            if (to) { const td = new Date(to); td.setHours(23, 59, 59, 999); recs = recs.filter(r => new Date(r.timestamp) <= td); }
+            renderReportTable(recs);
+            Toast.info(`Showing ${recs.length} records`);
+        }
+
+        function exportToCSV() {
+            const recs = LocalData.getAllRecords();
+            if (recs.length === 0) { Toast.warning('No records.'); return; }
+            const csv = ['Student,Date,Time,Status'];
+            recs.forEach(r => csv.push(`${r.username},${formatDate(r.timestamp)},${formatTime(r.timestamp)},Present`));
+            const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `attendance_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+            Toast.success('CSV exported!');
+        }
+
+        // ---- Bus Routes (Dynamic from LocalData) ----
+        function renderBusRoutes() {
+            const routes = LocalData.getBusRoutes();
+            const container = document.getElementById('bus-routes-container');
+            if (routes.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><i class="fas fa-bus"></i><p>No bus routes available yet. The Transport Incharge will add them.</p></div>';
+                return;
+            }
+            container.innerHTML = routes.map(r => `
+                <div class="bus-route-card">
+                    <div class="bus-route-header">
+                        <div class="bus-route-number" style="background:${r.color || '#6366f1'};">${r.number}</div>
+                        <div style="flex:1;">
+                            <h4 style="font-size:0.95rem;font-weight:700;">${r.name}</h4>
+                            <p style="font-size:0.75rem;color:var(--text-muted);"><i class="far fa-clock" style="margin-right:4px;"></i>${r.timing}</p>
+                        </div>
+                        ${r.whatsapp ? `<a href="${r.whatsapp}" target="_blank" rel="noopener" class="wa-btn"><i class="fab fa-whatsapp"></i> View WhatsApp Group</a>` : ''}
+                    </div>
+                    <div class="bus-route-stops">
+                        ${(r.stops || []).map((s, i) => `<span class="bus-stop ${i === 0 ? 'start' : i === r.stops.length - 1 ? 'end' : ''}">${i === 0 ? '<i class="fas fa-play" style="font-size:0.5rem;margin-right:2px;"></i>' : i === r.stops.length - 1 ? '<i class="fas fa-flag-checkered" style="font-size:0.5rem;margin-right:2px;"></i>' : ''}${s}</span>`).join('<span style="color:var(--text-muted);font-size:0.6rem;">→</span>')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ---- Bus Notices ----
+        function renderBusNotices() {
+            const notices = LocalData.getBusNotices();
+            const c = document.getElementById('bus-notices-container');
+            if (notices.length === 0) {
+                c.innerHTML = '<div class="empty-state"><i class="fas fa-bell"></i><p>No transport notices</p></div>';
+                return;
+            }
+            c.innerHTML = notices.map(n => `<div class="bus-notice-item ${n.priority || ''}">
+                <div style="display:flex;justify-content:space-between;align-items:start;">
+                    <h4 style="font-size:0.95rem;font-weight:600;">${n.title}</h4>
+                    <span style="font-size:0.65rem;padding:0.2rem 0.5rem;border-radius:var(--radius-full);background:${n.priority === 'urgent' ? 'rgba(239,68,68,0.15);color:var(--error)' : n.priority === 'high' ? 'rgba(245,158,11,0.15);color:#f59e0b' : 'rgba(99,102,241,0.15);color:var(--info)'};font-weight:600;">${(n.priority || 'normal').toUpperCase()}</span>
+                </div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.4rem;line-height:1.5;">${n.content}</p>
+                <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;">
+                    <i class="fas fa-bus"></i><span>${n.authorName || 'Transport Incharge'}</span>
+                    <span>•</span><span>${timeAgo(n.createdAt)}</span>
+                </div>
+            </div>`).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => { renderBusRoutes(); renderBusNotices(); });
+    </script>
+</body>
+
+</html>

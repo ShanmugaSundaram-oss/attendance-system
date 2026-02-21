@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART ATTENDANCE</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            overflow-x: hidden;
+        }
+        
+        .premium-gradient { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .glass-premium { 
+            backdrop-filter: blur(20px); 
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-premium { 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .card-premium:hover::before {
+            left: 100%;
+        }
+        
+        .card-premium:hover { 
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+        }
+        
+        .premium-button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .premium-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .premium-button:hover::before {
+            left: 100%;
+        }
+        
+        .premium-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.8) translateY(50px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        .floating-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .slide-in-premium { 
+            animation: slideInPremium 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        @keyframes slideInPremium { 
+            from { 
+                opacity: 0; 
+                transform: translateY(50px) scale(0.9); 
+            } 
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            } 
+        }
+        
+        .premium-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .premium-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .premium-text {
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .high-contrast-text {
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            letter-spacing: 1px;
+            font-weight: 800;
+        }
+        
+        .nav-title {
+            color: #ffffff;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+            letter-spacing: 2px;
+            font-weight: 800;
+        }
+        
+        .sparkle {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sparkle::after {
+            content: '✨';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 1.2rem;
+            animation: sparkle 2s infinite;
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="premium-gradient min-h-screen">
+    <!-- Navigation Header -->
+    <nav class="glass-premium border-b border-white/20 p-6">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="sparkle">
+                    <i class="fas fa-graduation-cap text-white text-3xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold nav-title">SMART ATTENDANCE</h1>
+            </div>
+            <div class="text-white text-sm flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fas fa-clock mr-1"></i>
+                    <span id="current-time" class="font-medium"></span>
+                </div>
+                <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-12">
+        <!-- Login Section -->
+        <div id="login-section" class="max-w-6xl mx-auto">
+            <!-- Welcome Section -->
+            <div class="text-center mb-16 slide-in-premium">
+                <div class="floating-animation mb-8">
+                    <h1 class="text-6xl md:text-7xl font-bold mb-6 high-contrast-text">
+                        Welcome to SMART ATTENDANCE
+                    </h1>
+                    <p class="text-white/90 text-2xl mb-12 font-light">
+                        Next-generation face recognition system for seamless attendance tracking
+                    </p>
+                </div>
+                
+                <!-- Premium Status Cards -->
+                <div class="grid md:grid-cols-3 gap-8 mb-16">
+                    <div class="glass-premium rounded-3xl p-8 text-white card-premium">
+                        <div class="text-center">
+                            <div class="w-20 h-20 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <i class="fas fa-users text-3xl text-white"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4">Students</h3>
+                            <p class="text-white/80 text-lg">Register and manage your attendance with advanced AI</p>
+                        </div>
+                    </div>
+                    <div class="glass-premium rounded-3xl p-8 text-white card-premium">
+                        <div class="text-center">
+                            <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <i class="fas fa-chalkboard-teacher text-3xl text-white"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4">Teachers</h3>
+                            <p class="text-white/80 text-lg">Track and manage class attendance effortlessly</p>
+                        </div>
+                    </div>
+                    <div class="glass-premium rounded-3xl p-8 text-white card-premium">
+                        <div class="text-center">
+                            <div class="w-20 h-20 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <i class="fas fa-chart-line text-3xl text-white"></i>
+                            </div>
+                            <h3 class="text-2xl font-bold mb-4">Analytics</h3>
+                            <p class="text-white/80 text-lg">View detailed attendance reports and insights</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Premium Login Cards -->
+            <div class="grid md:grid-cols-2 gap-12 mb-16">
+                <!-- Student Login Card -->
+                <div class="glass-premium rounded-3xl p-12 text-white card-premium">
+                    <div class="text-center mb-8">
+                        <div class="w-24 h-24 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-user-graduate text-4xl text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">Student Portal</h2>
+                        <p class="text-white/80 text-lg mb-8">Register your face and manage your attendance records</p>
+                    </div>
+                    <button id="student-login-btn" class="w-full premium-button text-white font-bold py-4 px-8 rounded-2xl text-lg">
+                        <i class="fas fa-sign-in-alt mr-3"></i>Student Login
+                    </button>
+                </div>
+
+                <!-- Teacher Login Card -->
+                <div class="glass-premium rounded-3xl p-12 text-white card-premium">
+                    <div class="text-center mb-8">
+                        <div class="w-24 h-24 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-chalkboard-teacher text-4xl text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold mb-4">Teacher Portal</h2>
+                        <p class="text-white/80 text-lg mb-8">Mark attendance and view comprehensive analytics</p>
+                    </div>
+                    <button id="teacher-login-btn" class="w-full premium-button text-white font-bold py-4 px-8 rounded-2xl text-lg">
+                        <i class="fas fa-sign-in-alt mr-3"></i>Teacher Login
+                    </button>
+                </div>
+            </div>
+
+            <!-- Premium System Status -->
+            <div class="glass-premium rounded-3xl p-8 text-white mb-12">
+                <h3 class="text-2xl font-bold mb-8 text-center">
+                    <i class="fas fa-cog mr-3"></i>System Status
+                </h3>
+                <div id="loading-indicator" class="text-center mb-6 text-white/90">
+                    <i class="fas fa-spinner fa-spin mr-3 text-2xl"></i>
+                    <span class="text-xl">Loading face recognition models...</span>
+                </div>
+                <div id="model-status" class="text-center mb-6 text-lg text-white/80 hidden">
+                    <i class="fas fa-brain mr-3"></i>Model Status: <span id="status-text" class="font-bold">Loading...</span>
+                </div>
+                <div id="debug-info" class="text-center hidden">
+                    <button id="retry-models" class="premium-button text-white px-6 py-3 rounded-xl font-semibold">
+                        <i class="fas fa-redo mr-2"></i>Retry Model Loading
+                    </button>
+                    <div id="debug-text" class="mt-4 text-sm text-white/70"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Premium Modal Login Form -->
+    <div id="login-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-lock text-3xl text-white"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2" id="modal-title">Login</h2>
+                <p class="text-gray-600" id="modal-subtitle">Enter your credentials to access the system</p>
+            </div>
+            
+            <form id="modal-login-form">
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-user mr-2 text-blue-500"></i>Username
+                    </label>
+                    <input type="text" id="modal-username" placeholder="Enter your username" 
+                           class="w-full p-4 premium-input rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none">
+                </div>
+                <div class="mb-8">
+                    <label class="block text-sm font-semibold text-gray-700 mb-3">
+                        <i class="fas fa-key mr-2 text-blue-500"></i>Password
+                    </label>
+                    <input type="password" id="modal-password" placeholder="Enter your password" 
+                           class="w-full p-4 premium-input rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="button" id="modal-cancel" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-4 px-6 rounded-xl transition-all duration-300">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="flex-1 premium-button text-white font-semibold py-4 px-6 rounded-xl">
+                        <i class="fas fa-sign-in-alt mr-2"></i>Login
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+        <!-- Student Section -->
+        <div id="student-section" class="hidden max-w-6xl mx-auto">
+            <!-- Student Header -->
+            <div class="glass-premium rounded-3xl p-8 text-white mb-8 card-premium">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2">
+                            <i class="fas fa-user-graduate mr-3 text-blue-300"></i>Student Portal
+                        </h1>
+                        <p class="text-white/70">Register your face for attendance tracking</p>
+                    </div>
+                    <button id="student-logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+                
+                <!-- Student Stats -->
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-check text-2xl text-green-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Total Attendance</p>
+                                <p class="text-xl font-bold" id="student-total-attendance">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-percentage text-2xl text-blue-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Attendance Rate</p>
+                                <p class="text-xl font-bold" id="student-attendance-rate">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-2xl text-purple-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Last Check-in</p>
+                                <p class="text-sm font-bold" id="student-last-checkin">Never</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Face Registration -->
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="glass-premium rounded-3xl p-8 text-white card-premium">
+                    <h2 class="text-2xl font-bold mb-6 text-center">
+                        <i class="fas fa-camera mr-2"></i>Face Registration
+                    </h2>
+                    <div class="relative mb-6">
+                        <video id="video" width="100%" height="300" autoplay class="rounded-xl border-2 border-white/20"></video>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="bg-black/50 rounded-full p-4">
+                                <i class="fas fa-user text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="canvas" class="hidden"></canvas>
+                    <button id="capture-face" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                        <i class="fas fa-camera mr-2"></i>Capture Face
+                    </button>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-white">
+                    <h2 class="text-2xl font-bold mb-6 text-center">
+                        <i class="fas fa-chart-bar mr-2"></i>Attendance History
+                    </h2>
+                    <div id="student-attendance-history" class="space-y-3 max-h-80 overflow-y-auto">
+                        <div class="text-center text-white/50 py-8">
+                            <i class="fas fa-history text-4xl mb-3"></i>
+                            <p>No attendance records yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher Section -->
+        <div id="teacher-section" class="hidden max-w-6xl mx-auto">
+            <!-- Teacher Header -->
+            <div class="glass-premium rounded-3xl p-8 text-white mb-8 card-premium">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h1 class="text-3xl font-bold mb-2">
+                            <i class="fas fa-chalkboard-teacher mr-3 text-green-300"></i>Teacher Portal
+                        </h1>
+                        <p class="text-white/70">Manage attendance and view analytics</p>
+                    </div>
+                    <button id="teacher-logout" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-all duration-300">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+                
+                <!-- Teacher Stats -->
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-users text-2xl text-blue-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Total Students</p>
+                                <p class="text-xl font-bold" id="teacher-total-students">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-check text-2xl text-green-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Today's Attendance</p>
+                                <p class="text-xl font-bold" id="teacher-today-attendance">0</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-percentage text-2xl text-purple-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Average Rate</p>
+                                <p class="text-xl font-bold" id="teacher-avg-rate">0%</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-2xl text-yellow-300 mr-3"></i>
+                            <div>
+                                <p class="text-sm text-white/70">Last Scan</p>
+                                <p class="text-sm font-bold" id="teacher-last-scan">Never</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attendance Scanner -->
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <div class="glass-effect rounded-2xl p-8 text-white">
+                    <h2 class="text-2xl font-bold mb-6 text-center">
+                        <i class="fas fa-qrcode mr-2"></i>Attendance Scanner
+                    </h2>
+                    <div class="relative mb-6">
+                        <video id="teacher-video" width="100%" height="300" autoplay class="rounded-xl border-2 border-white/20"></video>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <div class="bg-black/50 rounded-full p-4">
+                                <i class="fas fa-search text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <canvas id="teacher-canvas" class="hidden"></canvas>
+                    <button id="scan-attendance" class="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105">
+                        <i class="fas fa-search mr-2"></i>Scan for Attendance
+                    </button>
+                    <div id="attendance-result" class="mt-4 p-4 rounded-xl text-center"></div>
+                </div>
+
+                <div class="glass-effect rounded-2xl p-8 text-white">
+                    <h2 class="text-2xl font-bold mb-6 text-center">
+                        <i class="fas fa-list mr-2"></i>Recent Attendance
+                    </h2>
+                    <div id="teacher-recent-attendance" class="space-y-3 max-h-80 overflow-y-auto">
+                        <div class="text-center text-white/50 py-8">
+                            <i class="fas fa-list text-4xl mb-3"></i>
+                            <p>No recent attendance records</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Dashboard -->
+            <div class="glass-effect rounded-2xl p-8 text-white">
+                <h2 class="text-2xl font-bold mb-6 text-center">
+                    <i class="fas fa-chart-line mr-2"></i>Analytics Dashboard
+                </h2>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Attendance Trends</h3>
+                        <div id="attendance-chart" class="h-64 bg-white/10 rounded-xl flex items-center justify-center">
+                            <div class="text-center text-white/50">
+                                <i class="fas fa-chart-bar text-4xl mb-3"></i>
+                                <p>Chart will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold mb-4">Student List</h3>
+                        <div id="student-list" class="space-y-2 max-h-64 overflow-y-auto">
+                            <div class="text-center text-white/50 py-8">
+                                <i class="fas fa-users text-4xl mb-3"></i>
+                                <p>No students registered</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load face-api.js models with error handling
+        let modelsLoaded = false;
+        let modelsLoading = true;
+        
+        // Start immediately for basic functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting basic functionality');
+            start();
+        });
+
+        // Try to load models in the background
+        loadModels().then((success) => {
+            if (success) {
+                modelsLoaded = true;
+                modelsLoading = false;
+                console.log('Face API models loaded successfully');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const modelStatus = document.getElementById('model-status');
+                const statusText = document.getElementById('status-text');
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+                if (modelStatus) {
+                    modelStatus.classList.remove('hidden');
+                    if (statusText) {
+                        statusText.textContent = 'Loaded ✓';
+                        statusText.className = 'text-green-600';
+                    }
+                }
+            } else {
+                modelsLoading = false;
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const modelStatus = document.getElementById('model-status');
+                const statusText = document.getElementById('status-text');
+                const debugInfo = document.getElementById('debug-info');
+                const debugText = document.getElementById('debug-text');
+                if (loadingIndicator) {
+                    loadingIndicator.innerHTML = 'Models failed to load - using limited functionality';
+                }
+                if (modelStatus) {
+                    modelStatus.classList.remove('hidden');
+                    if (statusText) {
+                        statusText.textContent = 'Failed - Using Basic Mode';
+                        statusText.className = 'text-yellow-600';
+                    }
+                }
+                if (debugInfo) {
+                    debugInfo.classList.remove('hidden');
+                    if (debugText) {
+                        debugText.textContent = 'Click "Retry Model Loading" to try again. Check browser console for details.';
+                    }
+                }
+            }
+        });
+
+        // Set a timeout to mark models as not loading
+        setTimeout(() => {
+            if (modelsLoading) {
+                modelsLoading = false;
+                console.log('Model loading timeout - proceeding with limited functionality');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const modelStatus = document.getElementById('model-status');
+                const statusText = document.getElementById('status-text');
+                if (loadingIndicator) {
+                    loadingIndicator.innerHTML = 'Models loading slowly - using limited functionality';
+                }
+                if (modelStatus) {
+                    modelStatus.classList.remove('hidden');
+                    if (statusText) {
+                        statusText.textContent = 'Timeout - Using Basic Mode';
+                        statusText.className = 'text-yellow-600';
+                    }
+                }
+            }
+        }, 3000);
+
+        // Function to load models
+        async function loadModels() {
+            try {
+                console.log('Attempting to load models from local...');
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri('/models').catch(err => {
+                        console.error('SSD MobileNet error:', err);
+                        throw err;
+                    }),
+                    faceapi.nets.faceLandmark68Net.loadFromUri('/models').catch(err => {
+                        console.error('Face Landmark error:', err);
+                        throw err;
+                    }),
+                    faceapi.nets.faceRecognitionNet.loadFromUri('/models').catch(err => {
+                        console.error('Face Recognition error:', err);
+                        throw err;
+                    })
+                ]);
+                return true;
+            } catch (error) {
+                console.error('Local model loading failed:', error);
+                try {
+                    console.log('Attempting to load models from CDN...');
+                    await Promise.all([
+                        faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+                        faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+                        faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+                    ]);
+                    return true;
+                } catch (cdnError) {
+                    console.error('CDN model loading failed:', cdnError);
+                    return false;
+                }
+            }
+        }
+
+        // Global data storage
+        let attendanceData = {
+            students: {},
+            attendanceRecords: [],
+            currentUser: null,
+            currentUserType: null
+        };
+
+        // Mock user database
+        const users = {
+            students: { 'student1': 'pass1', 'student2': 'pass2' },
+            teachers: { 'teacher1': 'pass1', 'admin': 'admin123' }
+        };
+
+        // Initialize the application
+        function initApp() {
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadAttendanceData();
+        }
+
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const timeElement = document.getElementById('current-time');
+            if (timeElement) {
+                timeElement.textContent = timeString;
+            }
+        }
+
+        // Load attendance data from localStorage
+        function loadAttendanceData() {
+            const saved = localStorage.getItem('attendanceData');
+            if (saved) {
+                attendanceData = { ...attendanceData, ...JSON.parse(saved) };
+            }
+            updateDashboard();
+        }
+
+        // Save attendance data to localStorage
+        function saveAttendanceData() {
+            localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
+        }
+
+        // Update dashboard statistics
+        function updateDashboard() {
+            updateStudentDashboard();
+            updateTeacherDashboard();
+        }
+
+        // Update student dashboard
+        function updateStudentDashboard() {
+            if (!attendanceData.currentUser) return;
+            
+            const studentRecords = attendanceData.attendanceRecords.filter(r => r.username === attendanceData.currentUser);
+            const totalAttendance = studentRecords.length;
+            const attendanceRate = totalAttendance > 0 ? Math.round((totalAttendance / 30) * 100) : 0; // Assuming 30 days
+            const lastCheckin = studentRecords.length > 0 ? 
+                new Date(studentRecords[studentRecords.length - 1].timestamp).toLocaleString() : 'Never';
+
+            document.getElementById('student-total-attendance').textContent = totalAttendance;
+            document.getElementById('student-attendance-rate').textContent = attendanceRate + '%';
+            document.getElementById('student-last-checkin').textContent = lastCheckin;
+
+            // Update attendance history
+            updateStudentHistory(studentRecords);
+        }
+
+        // Update teacher dashboard
+        function updateTeacherDashboard() {
+            const totalStudents = Object.keys(attendanceData.students).length;
+            const today = new Date().toDateString();
+            const todayRecords = attendanceData.attendanceRecords.filter(r => 
+                new Date(r.timestamp).toDateString() === today
+            );
+            const avgRate = totalStudents > 0 ? Math.round((todayRecords.length / totalStudents) * 100) : 0;
+            const lastScan = todayRecords.length > 0 ? 
+                new Date(todayRecords[todayRecords.length - 1].timestamp).toLocaleString() : 'Never';
+
+            document.getElementById('teacher-total-students').textContent = totalStudents;
+            document.getElementById('teacher-today-attendance').textContent = todayRecords.length;
+            document.getElementById('teacher-avg-rate').textContent = avgRate + '%';
+            document.getElementById('teacher-last-scan').textContent = lastScan;
+
+            // Update recent attendance and student list
+            updateRecentAttendance(todayRecords);
+            updateStudentList();
+        }
+
+        // Update student attendance history
+        function updateStudentHistory(records) {
+            const historyContainer = document.getElementById('student-attendance-history');
+            if (records.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="text-center text-white/50 py-8">
+                        <i class="fas fa-history text-4xl mb-3"></i>
+                        <p>No attendance records yet</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyContainer.innerHTML = records.slice(-10).reverse().map(record => `
+                <div class="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-check text-green-300 mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium">${new Date(record.timestamp).toLocaleDateString()}</p>
+                            <p class="text-xs text-white/60">${new Date(record.timestamp).toLocaleTimeString()}</p>
+                        </div>
+                    </div>
+                    <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Present</span>
+                </div>
+            `).join('');
+        }
+
+        // Update recent attendance for teacher
+        function updateRecentAttendance(records) {
+            const container = document.getElementById('teacher-recent-attendance');
+            if (records.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-white/50 py-8">
+                        <i class="fas fa-list text-4xl mb-3"></i>
+                        <p>No recent attendance records</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = records.slice(-10).reverse().map(record => `
+                <div class="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-user text-blue-300 mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium">${record.username}</p>
+                            <p class="text-xs text-white/60">${new Date(record.timestamp).toLocaleString()}</p>
+                        </div>
+                    </div>
+                    <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs">Present</span>
+                </div>
+            `).join('');
+        }
+
+        // Update student list for teacher
+        function updateStudentList() {
+            const container = document.getElementById('student-list');
+            const students = Object.keys(attendanceData.students);
+            
+            if (students.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-white/50 py-8">
+                        <i class="fas fa-users text-4xl mb-3"></i>
+                        <p>No students registered</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = students.map(username => `
+                <div class="bg-white/10 rounded-lg p-3 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-user text-blue-300 mr-3"></i>
+                        <span class="text-sm font-medium">${username}</span>
+                    </div>
+                    <span class="bg-blue-500 text-white px-2 py-1 rounded-full text-xs">Registered</span>
+                </div>
+            `).join('');
+        }
+
+        async function start() {
+            const studentSection = document.getElementById('student-section');
+            const teacherSection = document.getElementById('teacher-section');
+            const loginSection = document.getElementById('login-section');
+            const loginForm = document.getElementById('login-form');
+            const studentLoginBtn = document.getElementById('student-login-btn');
+            const teacherLoginBtn = document.getElementById('teacher-login-btn');
+            const retryBtn = document.getElementById('retry-models');
+            const debugText = document.getElementById('debug-text');
+            const studentLogoutBtn = document.getElementById('student-logout');
+            const teacherLogoutBtn = document.getElementById('teacher-logout');
+
+            // Initialize app
+            initApp();
+
+            // Retry button functionality
+            if (retryBtn) {
+                retryBtn.addEventListener('click', async () => {
+                    retryBtn.disabled = true;
+                    retryBtn.textContent = 'Retrying...';
+                    debugText.textContent = 'Retrying model loading...';
+                    
+                    const success = await loadModels();
+                    if (success) {
+                        modelsLoaded = true;
+                        modelsLoading = false;
+                        const loadingIndicator = document.getElementById('loading-indicator');
+                        const modelStatus = document.getElementById('model-status');
+                        const statusText = document.getElementById('status-text');
+                        if (loadingIndicator) {
+                            loadingIndicator.style.display = 'none';
+                        }
+                        if (modelStatus) {
+                            modelStatus.classList.remove('hidden');
+                            if (statusText) {
+                                statusText.textContent = 'Loaded ✓';
+                                statusText.className = 'text-green-600';
+                            }
+                        }
+                        debugText.textContent = 'Models loaded successfully!';
+                        retryBtn.style.display = 'none';
+                    } else {
+                        debugText.textContent = 'Model loading failed. Check console for details.';
+                        retryBtn.disabled = false;
+                        retryBtn.textContent = 'Retry Model Loading';
+                    }
+                });
+            }
+
+            // Login handling
+            console.log('Setting up event listeners...');
+            
+            // Modal elements
+            const loginModal = document.getElementById('login-modal');
+            const modalTitle = document.getElementById('modal-title');
+            const modalSubtitle = document.getElementById('modal-subtitle');
+            const modalUsername = document.getElementById('modal-username');
+            const modalPassword = document.getElementById('modal-password');
+            const modalCancel = document.getElementById('modal-cancel');
+            const modalForm = document.getElementById('modal-login-form');
+
+            // Show modal function
+            function showLoginModal(userType) {
+                attendanceData.currentUserType = userType;
+                
+                if (userType === 'student') {
+                    modalTitle.textContent = 'Student Login';
+                    modalSubtitle.textContent = 'Enter your student credentials to access the portal';
+                } else {
+                    modalTitle.textContent = 'Teacher Login';
+                    modalSubtitle.textContent = 'Enter your teacher credentials to access the portal';
+                }
+                
+                loginModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+                
+                // Focus on username field
+                setTimeout(() => {
+                    modalUsername.focus();
+                }, 300);
+            }
+
+            // Hide modal function
+            function hideLoginModal() {
+                loginModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+                modalUsername.value = '';
+                modalPassword.value = '';
+            }
+
+            // Student login button
+            studentLoginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Student login button clicked');
+                showLoginModal('student');
+            });
+
+            // Teacher login button
+            teacherLoginBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('Teacher login button clicked');
+                showLoginModal('teacher');
+            });
+
+            // Modal cancel button
+            modalCancel.addEventListener('click', () => {
+                hideLoginModal();
+            });
+
+            // Close modal when clicking overlay
+            loginModal.addEventListener('click', (e) => {
+                if (e.target === loginModal) {
+                    hideLoginModal();
+                }
+            });
+
+            // Modal form submission
+            modalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = modalUsername.value;
+                const password = modalPassword.value;
+
+                if (attendanceData.currentUserType === 'student' && users.students[username] === password) {
+                    attendanceData.currentUser = username;
+                    hideLoginModal();
+                    loginSection.classList.add('hidden');
+                    studentSection.classList.remove('hidden');
+                    startStudentMode();
+                    updateDashboard();
+                    showNotification(`Welcome back, ${username}!`, 'success');
+                } else if (attendanceData.currentUserType === 'teacher' && users.teachers[username] === password) {
+                    attendanceData.currentUser = username;
+                    hideLoginModal();
+                    loginSection.classList.add('hidden');
+                    teacherSection.classList.remove('hidden');
+                    startTeacherMode();
+                    updateDashboard();
+                    showNotification(`Welcome back, ${username}!`, 'success');
+                } else {
+                    showNotification('Invalid credentials. Please try again.', 'error');
+                    modalPassword.value = '';
+                    modalPassword.focus();
+                }
+            });
+
+            // ESC key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && loginModal.classList.contains('active')) {
+                    hideLoginModal();
+                }
+            });
+
+            // Logout functionality
+            if (studentLogoutBtn) {
+                studentLogoutBtn.addEventListener('click', () => {
+                    logout();
+                });
+            }
+
+            if (teacherLogoutBtn) {
+                teacherLogoutBtn.addEventListener('click', () => {
+                    logout();
+                });
+            }
+
+            function logout() {
+                attendanceData.currentUser = null;
+                attendanceData.currentUserType = null;
+                studentSection.classList.add('hidden');
+                teacherSection.classList.add('hidden');
+                loginSection.classList.remove('hidden');
+                hideLoginModal();
+                saveAttendanceData();
+                showNotification('Logged out successfully', 'info');
+            }
+
+            // Student: Capture face
+            async function startStudentMode() {
+                const video = document.getElementById('video');
+                const captureBtn = document.getElementById('capture-face');
+
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+
+                captureBtn.addEventListener('click', async () => {
+                    try {
+                        if (modelsLoading) {
+                            alert('Face recognition models are still loading. Please wait a moment and try again.');
+                            return;
+                        }
+                        
+                        const canvas = document.getElementById('canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        
+                        if (modelsLoaded) {
+                            // Use full face recognition
+                            const detection = await faceapi.detectSingleFace(canvas)
+                                .withFaceLandmarks()
+                                .withFaceDescriptor();
+                            if (detection) {
+                                const username = attendanceData.currentUser;
+                                attendanceData.students[username] = {
+                                    descriptor: Array.from(detection.descriptor),
+                                    registeredAt: new Date().toISOString(),
+                                    lastSeen: new Date().toISOString()
+                                };
+                                saveAttendanceData();
+                                showNotification('Face captured successfully!', 'success');
+                                updateDashboard();
+                                
+                                // Send descriptor to backend
+                                fetch('/api/save-face', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        username: username,
+                                        descriptor: Array.from(detection.descriptor)
+                                    })
+                                });
+                            } else {
+                                showNotification('No face detected. Please try again.', 'error');
+                            }
+                        } else {
+                            // Fallback: just capture the image without face recognition
+                            const username = attendanceData.currentUser;
+                            attendanceData.students[username] = {
+                                descriptor: 'basic_capture',
+                                registeredAt: new Date().toISOString(),
+                                lastSeen: new Date().toISOString()
+                            };
+                            saveAttendanceData();
+                            showNotification('Face image captured! (Note: Full face recognition not available)', 'warning');
+                            updateDashboard();
+                            
+                            // Send basic info to backend
+                            fetch('/api/save-face', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    username: username,
+                                    descriptor: 'basic_capture'
+                                })
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error capturing face:', error);
+                        alert('Error capturing face. Please try again.');
+                    }
+                });
+            }
+
+            // Teacher: Scan for attendance
+            async function startTeacherMode() {
+                const video = document.getElementById('teacher-video');
+                const scanBtn = document.getElementById('scan-attendance');
+                const resultDiv = document.getElementById('attendance-result');
+
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+
+                scanBtn.addEventListener('click', async () => {
+                    try {
+                        if (modelsLoading) {
+                            resultDiv.innerHTML = 'Face recognition models are still loading. Please wait a moment and try again.';
+                            return;
+                        }
+                        
+                        const canvas = document.getElementById('teacher-canvas');
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        canvas.getContext('2d').drawImage(video, 0, 0);
+                        
+                        if (modelsLoaded) {
+                            // Use full face recognition
+                            const detection = await faceapi.detectSingleFace(canvas)
+                                .withFaceLandmarks()
+                                .withFaceDescriptor();
+                            if (detection) {
+                                const faceMatcher = new faceapi.FaceMatcher(Object.entries(attendanceData.students).map(([label, student]) => ({
+                                    label,
+                                    descriptor: new Float32Array(student.descriptor)
+                                })));
+                                const match = faceMatcher.findBestMatch(detection.descriptor);
+                                if (match.label !== 'unknown' && match.distance < 0.6) {
+                                    markAttendance(match.label);
+                                    resultDiv.innerHTML = `
+                                        <div class="bg-green-500 text-white p-4 rounded-xl">
+                                            <i class="fas fa-check-circle mr-2"></i>
+                                            Attendance marked for ${match.label}!
+                                        </div>
+                                    `;
+                                } else {
+                                    resultDiv.innerHTML = `
+                                        <div class="bg-yellow-500 text-white p-4 rounded-xl">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            No match found. Please register first.
+                                        </div>
+                                    `;
+                                }
+                            } else {
+                                resultDiv.innerHTML = `
+                                    <div class="bg-red-500 text-white p-4 rounded-xl">
+                                        <i class="fas fa-times-circle mr-2"></i>
+                                        No face detected.
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            // Fallback: simple attendance marking
+                            const registeredUsers = Object.keys(attendanceData.students);
+                            if (registeredUsers.length > 0) {
+                                // For demo purposes, mark attendance for the first registered user
+                                const username = registeredUsers[0];
+                                markAttendance(username);
+                                resultDiv.innerHTML = `
+                                    <div class="bg-blue-500 text-white p-4 rounded-xl">
+                                        <i class="fas fa-info-circle mr-2"></i>
+                                        Attendance marked for ${username}! (Basic mode)
+                                    </div>
+                                `;
+                            } else {
+                                resultDiv.innerHTML = `
+                                    <div class="bg-gray-500 text-white p-4 rounded-xl">
+                                        <i class="fas fa-exclamation-circle mr-2"></i>
+                                        No registered users found. Please register faces first.
+                                    </div>
+                                `;
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error scanning for attendance:', error);
+                        resultDiv.innerHTML = 'Error scanning for attendance. Please try again.';
+                    }
+                });
+            }
+
+            // Helper function to mark attendance
+            function markAttendance(username) {
+                const now = new Date();
+                const today = now.toDateString();
+                
+                // Check if already marked today
+                const alreadyMarked = attendanceData.attendanceRecords.some(record => 
+                    record.username === username && 
+                    new Date(record.timestamp).toDateString() === today
+                );
+                
+                if (!alreadyMarked) {
+                    const attendanceRecord = {
+                        username: username,
+                        timestamp: now.toISOString(),
+                        date: today,
+                        time: now.toLocaleTimeString()
+                    };
+                    
+                    attendanceData.attendanceRecords.push(attendanceRecord);
+                    saveAttendanceData();
+                    updateDashboard();
+                    showNotification(`Attendance marked for ${username}`, 'success');
+                } else {
+                    showNotification(`${username} already marked today`, 'warning');
+                }
+            }
+
+            // Notification system
+            function showNotification(message, type = 'info') {
+                // Remove existing notifications
+                const existingNotifications = document.querySelectorAll('.notification');
+                existingNotifications.forEach(notification => notification.remove());
+
+                const notification = document.createElement('div');
+                notification.className = `notification fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg text-white max-w-sm transform transition-all duration-300 slide-in`;
+                
+                const icons = {
+                    success: 'fas fa-check-circle',
+                    error: 'fas fa-times-circle',
+                    warning: 'fas fa-exclamation-triangle',
+                    info: 'fas fa-info-circle'
+                };
+                
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    warning: 'bg-yellow-500',
+                    info: 'bg-blue-500'
+                };
+                
+                notification.className += ` ${colors[type]}`;
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="${icons[type]} mr-3"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Auto remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.transform = 'translateX(100%)';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
