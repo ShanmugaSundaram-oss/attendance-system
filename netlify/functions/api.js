@@ -9,6 +9,7 @@ const { db } = require('../../config/firebase');
 // Import routes
 const authRoutes = require('../../routes/auth');
 const googleAuthRoutes = require('../../routes/google-auth');
+const faceRoutes = require('../../routes/face');
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', googleAuthRoutes);
+app.use('/api/face', faceRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

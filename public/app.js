@@ -155,7 +155,7 @@ const Auth = {
         };
         localStorage.setItem('rit_local_users', JSON.stringify(localUsers));
         // Also add to MockUsers for instant login
-        const roleMap = { student: 'students', teacher: 'teachers' };
+        const roleMap = { student: 'students', teacher: 'teachers', admin: 'teachers', transport: 'transport' };
         if (MockUsers[roleMap[data.role]]) {
             MockUsers[roleMap[data.role]][data.username] = data.password;
         }

@@ -10,6 +10,7 @@ const { db } = require('./config/firebase');
 // Import routes
 const authRoutes = require('./routes/auth');
 const googleAuthRoutes = require('./routes/google-auth');
+const faceRoutes = require('./routes/face');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -57,6 +58,7 @@ app.use(express.static('public'));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/auth', googleAuthRoutes);
+app.use('/api/face', faceRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

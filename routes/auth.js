@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { db } = require('../config/firebase');
+const { admin, db } = require('../config/firebase');
 
 const USERS_COLLECTION = 'users';
 const ALLOWED_DOMAIN = 'ritchennai.edu.in';
+const VALID_ROLES = ['student', 'teacher', 'admin', 'transport'];
 
-// Register
+// Register — creates user in BOTH Firebase Auth AND Firestore
 router.post('/register', async (req, res) => {
     try {
         const { username, email, password, role, firstName, lastName, phone, department, studentClass } = req.body;
@@ -20,8 +21,8 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
         }
 
-        if (!['student', 'teacher'].includes(role)) {
-            return res.status(400).json({ success: false, message: 'Role must be student or teacher' });
+        if (!VALID_ROLES.includes(role)) {
+            return res.status(400).json({ success: false, message: 'Invalid role' });
         }
 
         // Check email domain
@@ -30,19 +31,29 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Only @ritchennai.edu.in emails are allowed' });
         }
 
-        // Check if user already exists (by email)
+        // Check if user already exists in Firestore
         const existingUser = await db.collection(USERS_COLLECTION).where('email', '==', email.toLowerCase()).get();
         if (!existingUser.empty) {
             return res.status(400).json({ success: false, message: 'User with this email already exists' });
         }
 
-        // Check by username too
-        const existingUsername = await db.collection(USERS_COLLECTION).where('username', '==', username).get();
-        if (!existingUsername.empty) {
-            return res.status(400).json({ success: false, message: 'Username already taken' });
+        // Create user in Firebase Authentication (so it appears in Firebase Console)
+        let firebaseUser;
+        try {
+            firebaseUser = await admin.auth().createUser({
+                email: email.toLowerCase(),
+                password: password,
+                displayName: `${firstName || ''} ${lastName || ''}`.trim() || username
+            });
+        } catch (authErr) {
+            if (authErr.code === 'auth/email-already-exists') {
+                return res.status(400).json({ success: false, message: 'User with this email already exists' });
+            }
+            console.error('Firebase Auth createUser error:', authErr);
+            // Continue even if Firebase Auth fails — still save to Firestore
         }
 
-        // Hash password
+        // Hash password for Firestore backup
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -58,12 +69,20 @@ router.post('/register', async (req, res) => {
             department: department || '',
             studentClass: studentClass || '',
             authProvider: 'local',
+            firebaseUid: firebaseUser?.uid || '',
             isActive: true,
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString()
         };
 
         const docRef = await db.collection(USERS_COLLECTION).add(userData);
+
+        // Set custom claims for role
+        if (firebaseUser) {
+            try {
+                await admin.auth().setCustomUserClaims(firebaseUser.uid, { role });
+            } catch (e) { /* ignore */ }
+        }
 
         // Generate JWT token
         const token = jwt.sign(
@@ -94,7 +113,7 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
     try {
-        const { username, password, role } = req.body;
+        const { username, password } = req.body;
 
         if (!username || !password) {
             return res.status(400).json({ success: false, message: 'Username and password are required' });
@@ -104,13 +123,11 @@ router.post('/login', async (req, res) => {
         let userDoc = null;
         let userId = null;
 
-        // Try username first
         const byUsername = await db.collection(USERS_COLLECTION).where('username', '==', username).get();
         if (!byUsername.empty) {
             userDoc = byUsername.docs[0];
             userId = userDoc.id;
         } else {
-            // Try email
             const byEmail = await db.collection(USERS_COLLECTION).where('email', '==', username.toLowerCase()).get();
             if (!byEmail.empty) {
                 userDoc = byEmail.docs[0];
@@ -124,25 +141,21 @@ router.post('/login', async (req, res) => {
 
         const userData = userDoc.data();
 
-        // Check if account is active
         if (userData.isActive === false) {
             return res.status(403).json({ success: false, message: 'Account is deactivated' });
         }
 
-        // Compare password
         const isMatch = await bcrypt.compare(password, userData.password);
         if (!isMatch) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        // Update last login
         await db.collection(USERS_COLLECTION).doc(userId).update({
             lastLogin: new Date().toISOString()
         });
 
-        // Generate JWT
         const token = jwt.sign(
-            { userId: userId, role: userData.role },
+            { userId, role: userData.role },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '7d' }
         );
