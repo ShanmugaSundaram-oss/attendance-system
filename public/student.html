@@ -776,6 +776,20 @@
             if (!video.srcObject) { Toast.warning('Camera starting...'); await startCamera(); return; }
             btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Processing...';
 
+            // Check if face already registered
+            try {
+                const token = localStorage.getItem('rit_token');
+                const checkRes = await fetch(`${API_BASE}/face/check/${encodeURIComponent(currentUser?.email || '')}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const checkData = await checkRes.json();
+                if (checkData.registered) {
+                    resultDiv.innerHTML = '<div class="scan-result warning" style="padding:1rem;"><i class="fas fa-info-circle"></i> <strong>Your face is already registered!</strong><br><span style="font-size:0.8rem;color:#999;">You can only register your face once. Contact your teacher if you need to re-register.</span></div>';
+                    btn.disabled = false; btn.innerHTML = '<i class="fas fa-camera"></i> Capture & Register Face';
+                    return;
+                }
+            } catch (e) { /* continue even if check fails */ }
+
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0);
 
@@ -783,16 +797,47 @@
                 if (FaceModels.loaded) {
                     const det = await faceapi.detectSingleFace(canvas).withFaceLandmarks().withFaceDescriptor();
                     if (det) {
-                        LocalData.addStudent(username, Array.from(det.descriptor));
-                        resultDiv.innerHTML = '<div class="scan-result success"><i class="fas fa-check-circle"></i> Face registered with AI recognition!</div>';
-                        Toast.success('Face registered!'); updateStudentDashboard();
+                        const descriptorArray = Array.from(det.descriptor);
+
+                        // Save to Firestore via API
+                        try {
+                            const token = localStorage.getItem('rit_token');
+                            const res = await fetch(`${API_BASE}/face/register`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    descriptor: descriptorArray,
+                                    studentName: currentUser?.firstName ? `${currentUser.firstName} ${currentUser.lastName || ''}`.trim() : username,
+                                    studentEmail: currentUser?.email || '',
+                                    studentId: currentUser?.username || ''
+                                })
+                            });
+                            const data = await res.json();
+                            if (data.success) {
+                                resultDiv.innerHTML = `<div class="scan-result success" style="padding:1rem;">
+                                    <i class="fas fa-check-circle"></i> <strong>Face registered successfully!</strong>
+                                    <br><span style="font-size:0.8rem;color:#aaa;">Your face data has been saved securely. Your teacher can now scan your face for daily attendance.</span>
+                                </div>`;
+                                Toast.success('Face registered to cloud!');
+                            } else {
+                                resultDiv.innerHTML = `<div class="scan-result warning" style="padding:1rem;"><i class="fas fa-exclamation-triangle"></i> ${data.message}</div>`;
+                                Toast.warning(data.message);
+                            }
+                        } catch (e) {
+                            // Fallback to localStorage
+                            LocalData.addStudent(username, descriptorArray);
+                            resultDiv.innerHTML = '<div class="scan-result success"><i class="fas fa-check-circle"></i> Face registered locally (offline mode).</div>';
+                            Toast.success('Face registered locally!');
+                        }
+                        updateStudentDashboard();
                     } else {
-                        resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> No face detected. Try again.</div>';
+                        resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> No face detected. Make sure your face is clearly visible and try again.</div>';
                     }
                 } else {
-                    LocalData.addStudent(username, 'basic_capture');
-                    resultDiv.innerHTML = '<div class="scan-result warning"><i class="fas fa-exclamation-triangle"></i> Captured in basic mode</div>';
-                    Toast.warning('Captured in basic mode.'); updateStudentDashboard();
+                    resultDiv.innerHTML = '<div class="scan-result warning"><i class="fas fa-info-circle"></i> Face AI models are still loading. Please wait a moment and try again.</div>';
                 }
             } catch (err) { resultDiv.innerHTML = '<div class="scan-result error"><i class="fas fa-times-circle"></i> Error. Try again.</div>'; }
             btn.disabled = false; btn.innerHTML = '<i class="fas fa-camera"></i> Capture & Register Face';

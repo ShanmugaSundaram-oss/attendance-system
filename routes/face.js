@@ -39,11 +39,23 @@ router.post('/register', verifyToken, async (req, res) => {
             });
         }
 
+        // Look up department from users collection
+        let department = '';
+        try {
+            const userSnap = await db.collection('users')
+                .where('email', '==', studentEmail.toLowerCase())
+                .get();
+            if (!userSnap.empty) {
+                department = userSnap.docs[0].data().department || '';
+            }
+        } catch (e) { }
+
         // Save face descriptor to Firestore
         const faceData = {
             studentName: studentName || '',
             studentEmail: studentEmail.toLowerCase(),
             studentId: studentId || '',
+            department,
             descriptor: JSON.stringify(descriptor), // Float32Array → JSON string
             registeredBy: req.user.userId,
             registeredAt: new Date().toISOString()
@@ -92,6 +104,7 @@ router.get('/all', verifyToken, async (req, res) => {
                 studentName: data.studentName,
                 studentEmail: data.studentEmail,
                 studentId: data.studentId,
+                department: data.department || '',
                 descriptor: JSON.parse(data.descriptor)
             });
         });
