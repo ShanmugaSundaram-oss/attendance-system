@@ -30,6 +30,7 @@
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.45",
     "mongoose": "^7.6.0",
+    "serverless-http": "^4.0.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {
