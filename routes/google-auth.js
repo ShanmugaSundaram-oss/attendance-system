@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { db } = require('../config/firebase');
 
-// Allowed email domain
+const USERS_COLLECTION = 'users';
 const ALLOWED_DOMAIN = 'ritchennai.edu.in';
 
 // Firebase Auth — receives verified user info from client-side Firebase SDK
@@ -15,48 +15,60 @@ router.post('/firebase', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email and UID are required' });
         }
 
-        // Check domain — allow any subdomain of ritchennai.edu.in
+        // Check domain
         const emailDomain = email.split('@')[1];
         if (!emailDomain || !emailDomain.endsWith(ALLOWED_DOMAIN)) {
             return res.status(403).json({
                 success: false,
-                message: `Access restricted to @${ALLOWED_DOMAIN} email addresses. Your email (${email}) is not permitted.`
+                message: `Access restricted to @${ALLOWED_DOMAIN} emails. Your email (${email}) is not permitted.`
             });
         }
 
-        // Find or create user
-        let user = await User.findOne({ email: email.toLowerCase() });
+        // Find user by email in Firestore
+        const existingUsers = await db.collection(USERS_COLLECTION).where('email', '==', email.toLowerCase()).get();
 
-        if (!user) {
-            const username = email.split('@')[0];
-            const role = userType || 'student';
+        let userId, userData;
+
+        if (!existingUsers.empty) {
+            // Existing user
+            const doc = existingUsers.docs[0];
+            userId = doc.id;
+            userData = doc.data();
+
+            // Update last login
+            await db.collection(USERS_COLLECTION).doc(userId).update({
+                lastLogin: new Date().toISOString(),
+                googleId: uid,
+                profilePicture: photoURL || '',
+                authProvider: 'google'
+            });
+        } else {
+            // Create new user
             const nameParts = (displayName || '').split(' ');
+            const username = email.split('@')[0];
 
-            user = new User({
-                username: username,
+            userData = {
+                username,
                 email: email.toLowerCase(),
                 password: `firebase_${uid}_${Date.now()}`,
-                role: role,
+                role: userType || 'student',
                 firstName: nameParts[0] || '',
                 lastName: nameParts.slice(1).join(' ') || '',
                 profilePicture: photoURL || '',
                 isActive: true,
                 authProvider: 'google',
-                googleId: uid
-            });
+                googleId: uid,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            };
 
-            await user.save();
+            const docRef = await db.collection(USERS_COLLECTION).add(userData);
+            userId = docRef.id;
         }
 
-        // Update last login
-        user.lastLogin = new Date();
-        user.loginAttempts = 0;
-        user.lockUntil = null;
-        await user.save();
-
-        // Generate our app's JWT
+        // Generate JWT
         const token = jwt.sign(
-            { userId: user._id, userType: user.role },
+            { userId, role: userData.role },
             process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
@@ -65,12 +77,12 @@ router.post('/firebase', async (req, res) => {
             success: true,
             token,
             user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                role: user.role,
-                firstName: user.firstName || (displayName || '').split(' ')[0],
-                lastName: user.lastName || '',
+                id: userId,
+                username: userData.username,
+                email: userData.email,
+                role: userData.role,
+                firstName: userData.firstName || (displayName || '').split(' ')[0],
+                lastName: userData.lastName || '',
                 profilePicture: photoURL
             }
         });

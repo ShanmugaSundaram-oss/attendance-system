@@ -9,6 +9,9 @@ yarn-error.log*
 .env.local
 .env.*.local
 
+# Firebase service account (secret)
+config/firebase-service-account.json
+
 # IDE and editor files
 .vscode/
 .idea/

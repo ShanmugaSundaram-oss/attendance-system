@@ -112,7 +112,7 @@ const Auth = {
         return { success: false, message: 'Invalid credentials' };
     },
 
-    // Try real API register
+    // Try real API register, fallback to localStorage
     async attemptRegister(data) {
         try {
             const res = await fetch(`${API_BASE}/auth/register`, {
@@ -121,10 +121,45 @@ const Auth = {
                 body: JSON.stringify(data)
             });
             const result = await res.json();
+            if (result.success) return result;
+            // If server error (not validation), fallback
+            if (res.status >= 500) return this._registerFallback(data);
             return result;
         } catch (err) {
-            return { success: false, message: 'Server unavailable. Please try again later.' };
+            // Server unreachable — fallback to localStorage
+            return this._registerFallback(data);
         }
+    },
+
+    _registerFallback(data) {
+        // Check domain
+        const domain = (data.email || '').split('@')[1] || '';
+        if (!domain.endsWith('ritchennai.edu.in')) {
+            return { success: false, message: 'Only @ritchennai.edu.in emails are allowed' };
+        }
+        // Store in localStorage
+        const localUsers = JSON.parse(localStorage.getItem('rit_local_users') || '{}');
+        if (localUsers[data.email]) {
+            return { success: false, message: 'User already exists' };
+        }
+        localUsers[data.email] = {
+            username: data.username,
+            email: data.email,
+            password: data.password,
+            role: data.role,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            department: data.department,
+            studentClass: data.studentClass
+        };
+        localStorage.setItem('rit_local_users', JSON.stringify(localUsers));
+        // Also add to MockUsers for instant login
+        const roleMap = { student: 'students', teacher: 'teachers' };
+        if (MockUsers[roleMap[data.role]]) {
+            MockUsers[roleMap[data.role]][data.username] = data.password;
+        }
+        return { success: true, message: 'Account created (offline mode)', source: 'local' };
     },
 
     // Firebase Auth login

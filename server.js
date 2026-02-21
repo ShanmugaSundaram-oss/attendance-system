@@ -3,25 +3,16 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-const connectDB = require('./config/database');
+
+// Initialize Firebase (replaces MongoDB)
+const { db } = require('./config/firebase');
 
 // Import routes
 const authRoutes = require('./routes/auth');
-const attendanceRoutes = require('./routes/attendance');
-const adminRoutes = require('./routes/admin');
-const announcementRoutes = require('./routes/announcements');
-const timetableRoutes = require('./routes/timetable');
-const gradeRoutes = require('./routes/grades');
-const transportRoutes = require('./routes/transport');
 const googleAuthRoutes = require('./routes/google-auth');
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-// Connect to MongoDB (non-fatal — runs in localStorage mode if unavailable)
-connectDB().catch(err => {
-    console.warn('⚠️  MongoDB unavailable — running in localStorage-only mode');
-});
 
 // Security Middleware — configure CSP for our frontend
 app.use(helmet({
@@ -36,15 +27,15 @@ app.use(helmet({
             connectSrc: ["'self'", "https://justadudewhohacks.github.io", "https://cdn.jsdelivr.net", "https://www.googleapis.com", "https://securetoken.googleapis.com", "https://identitytoolkit.googleapis.com"],
             mediaSrc: ["'self'", "blob:"],
             workerSrc: ["'self'", "blob:"],
-            frameSrc: ["https://rit-smart-ims.firebaseapp.com", "https://accounts.google.com"]
+            frameSrc: ["https://smartattendance-e7bba.firebaseapp.com", "https://accounts.google.com"]
         }
     }
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 500 // limit each IP to 500 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 500
 });
 app.use(limiter);
 
@@ -65,25 +56,13 @@ app.use(express.static('public'));
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/attendance', attendanceRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/announcements', announcementRoutes);
-app.use('/api/timetable', timetableRoutes);
-app.use('/api/grades', gradeRoutes);
-app.use('/api/transport', transportRoutes);
-app.use('/api/auth', googleAuthRoutes);  // Google OAuth
-
-// Config endpoint — expose Google Client ID to frontend
-app.get('/api/config', (req, res) => {
-    res.json({
-        firebaseProjectId: process.env.FIREBASE_PROJECT_ID || 'rit-smart-ims',
-    });
-});
+app.use('/api/auth', googleAuthRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'Server is running',
+        database: 'Firebase Firestore',
         timestamp: new Date(),
         environment: process.env.NODE_ENV || 'development'
     });
@@ -111,13 +90,14 @@ app.get('/admin.html', (req, res) => {
 app.get('/register.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'register.html'));
 });
+
 app.get('/transport.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'transport.html'));
 });
 
 // Legacy /api/save-face alias
 app.post('/api/save-face', (req, res) => {
-    res.json({ success: true, message: 'Face data received (localStorage mode)' });
+    res.json({ success: true, message: 'Face data received' });
 });
 
 // 404 handler
@@ -143,7 +123,7 @@ app.use((err, req, res, next) => {
 app.listen(port, () => {
     console.log(`✅ SMART ATTENDANCE Server running at http://localhost:${port}`);
     console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🗄️  Database: ${process.env.MONGODB_URI || 'MongoDB'}`);
+    console.log(`🗄️  Database: Firebase Firestore`);
 });
 
 // Handle unhandled promise rejections

@@ -1,79 +1,73 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
-const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const Student = require('../models/Student');
-const Teacher = require('../models/Teacher');
-
 const router = express.Router();
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { db } = require('../config/firebase');
 
-// Validation middleware
-const validateInput = (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ success: false, errors: errors.array() });
-    }
-    next();
-};
+const USERS_COLLECTION = 'users';
+const ALLOWED_DOMAIN = 'ritchennai.edu.in';
 
-// Register endpoint
-router.post('/register', [
-    body('username').isLength({ min: 3 }).trim().escape(),
-    body('email').isEmail().normalizeEmail(),
-    body('password').isLength({ min: 6 }),
-    body('role').isIn(['student', 'teacher']),
-    body('firstName').trim().escape(),
-    body('lastName').trim().escape()
-], validateInput, async (req, res) => {
+// Register
+router.post('/register', async (req, res) => {
     try {
         const { username, email, password, role, firstName, lastName, phone, department, studentClass } = req.body;
 
+        if (!username || !email || !password || !role) {
+            return res.status(400).json({ success: false, message: 'Username, email, password, and role are required' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
+        }
+
+        if (!['student', 'teacher'].includes(role)) {
+            return res.status(400).json({ success: false, message: 'Role must be student or teacher' });
+        }
+
         // Check email domain
         const emailDomain = email.split('@')[1] || '';
-        if (!emailDomain.endsWith('ritchennai.edu.in')) {
+        if (!emailDomain.endsWith(ALLOWED_DOMAIN)) {
             return res.status(400).json({ success: false, message: 'Only @ritchennai.edu.in emails are allowed' });
         }
 
-        // Check if user exists
-        let user = await User.findOne({ $or: [{ email }, { username }] });
-        if (user) {
-            return res.status(400).json({ success: false, message: 'User already exists' });
+        // Check if user already exists (by email)
+        const existingUser = await db.collection(USERS_COLLECTION).where('email', '==', email.toLowerCase()).get();
+        if (!existingUser.empty) {
+            return res.status(400).json({ success: false, message: 'User with this email already exists' });
         }
 
-        // Create new user
-        user = new User({
+        // Check by username too
+        const existingUsername = await db.collection(USERS_COLLECTION).where('username', '==', username).get();
+        if (!existingUsername.empty) {
+            return res.status(400).json({ success: false, message: 'Username already taken' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create user doc in Firestore
+        const userData = {
             username,
-            email,
-            password,
+            email: email.toLowerCase(),
+            password: hashedPassword,
             role,
-            firstName,
-            lastName,
+            firstName: firstName || '',
+            lastName: lastName || '',
             phone: phone || '',
             department: department || '',
             studentClass: studentClass || '',
-            authProvider: 'local'
-        });
+            authProvider: 'local',
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+        };
 
-        await user.save();
-
-        // Create profile based on role
-        if (role === 'student') {
-            const student = new Student({
-                userId: user._id,
-                studentId: `STU-${user._id}`
-            });
-            await student.save();
-        } else if (role === 'teacher') {
-            const teacher = new Teacher({
-                userId: user._id,
-                employeeId: `EMP-${user._id}`
-            });
-            await teacher.save();
-        }
+        const docRef = await db.collection(USERS_COLLECTION).add(userData);
 
         // Generate JWT token
         const token = jwt.sign(
-            { userId: user._id, role: user.role },
+            { userId: docRef.id, role: userData.role },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '7d' }
         );
@@ -82,143 +76,116 @@ router.post('/register', [
             success: true,
             message: 'User registered successfully',
             token,
-            user: user.toJSON()
+            user: {
+                id: docRef.id,
+                username: userData.username,
+                email: userData.email,
+                role: userData.role,
+                firstName: userData.firstName,
+                lastName: userData.lastName
+            }
         });
     } catch (error) {
+        console.error('Registration error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// Login endpoint
-router.post('/login', [
-    body('username').notEmpty().trim(),
-    body('password').notEmpty()
-], validateInput, async (req, res) => {
+// Login
+router.post('/login', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { username, password, role } = req.body;
 
-        // Find user by username or email
-        const user = await User.findOne({
-            $or: [{ username }, { email: username }]
-        }).select('+password');
-
-        if (!user) {
-            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        if (!username || !password) {
+            return res.status(400).json({ success: false, message: 'Username and password are required' });
         }
 
-        // Check if account is locked
-        if (user.isLocked) {
-            return res.status(403).json({ success: false, message: 'Account locked. Try again later.' });
-        }
+        // Find user by username OR email
+        let userDoc = null;
+        let userId = null;
 
-        // Compare passwords
-        const isPasswordValid = await user.comparePassword(password);
-        if (!isPasswordValid) {
-            user.loginAttempts += 1;
-            if (user.loginAttempts >= 5) {
-                user.lockUntil = new Date(Date.now() + 30 * 60 * 1000); // Lock for 30 minutes
+        // Try username first
+        const byUsername = await db.collection(USERS_COLLECTION).where('username', '==', username).get();
+        if (!byUsername.empty) {
+            userDoc = byUsername.docs[0];
+            userId = userDoc.id;
+        } else {
+            // Try email
+            const byEmail = await db.collection(USERS_COLLECTION).where('email', '==', username.toLowerCase()).get();
+            if (!byEmail.empty) {
+                userDoc = byEmail.docs[0];
+                userId = userDoc.id;
             }
-            await user.save();
+        }
+
+        if (!userDoc) {
             return res.status(401).json({ success: false, message: 'Invalid credentials' });
         }
 
-        // Reset login attempts on successful login
-        user.loginAttempts = 0;
-        user.lockUntil = null;
-        user.lastLogin = new Date();
-        await user.save();
+        const userData = userDoc.data();
 
-        // Generate JWT token
+        // Check if account is active
+        if (userData.isActive === false) {
+            return res.status(403).json({ success: false, message: 'Account is deactivated' });
+        }
+
+        // Compare password
+        const isMatch = await bcrypt.compare(password, userData.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid credentials' });
+        }
+
+        // Update last login
+        await db.collection(USERS_COLLECTION).doc(userId).update({
+            lastLogin: new Date().toISOString()
+        });
+
+        // Generate JWT
         const token = jwt.sign(
-            { userId: user._id, role: user.role },
+            { userId: userId, role: userData.role },
             process.env.JWT_SECRET || 'your-secret-key',
             { expiresIn: '7d' }
         );
 
         res.json({
             success: true,
-            message: 'Login successful',
             token,
-            user: user.toJSON()
+            user: {
+                id: userId,
+                username: userData.username,
+                email: userData.email,
+                role: userData.role,
+                firstName: userData.firstName || '',
+                lastName: userData.lastName || '',
+                department: userData.department || '',
+                studentClass: userData.studentClass || ''
+            }
         });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
-// Get current user
-router.get('/me', async (req, res) => {
+// Get user profile
+router.get('/profile', async (req, res) => {
     try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ success: false, message: 'No token provided' });
-        }
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (!token) return res.status(401).json({ success: false, message: 'No token' });
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const user = await User.findById(decoded.userId);
+        const userDoc = await db.collection(USERS_COLLECTION).doc(decoded.userId).get();
 
-        if (!user) {
+        if (!userDoc.exists) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
-        res.json({ success: true, user: user.toJSON() });
+        const userData = userDoc.data();
+        delete userData.password;
+        res.json({ success: true, user: { id: userDoc.id, ...userData } });
     } catch (error) {
         res.status(401).json({ success: false, message: 'Invalid token' });
     }
-});
-
-// Verify token
-router.get('/verify', (req, res) => {
-    try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ success: false, message: 'No token provided' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        res.json({ success: true, valid: true, decoded });
-    } catch (error) {
-        res.status(401).json({ success: false, message: 'Invalid token' });
-    }
-});
-
-// Change password
-router.post('/change-password', [
-    body('oldPassword').notEmpty(),
-    body('newPassword').isLength({ min: 6 })
-], validateInput, async (req, res) => {
-    try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ success: false, message: 'No token provided' });
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        const user = await User.findById(decoded.userId).select('+password');
-
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-
-        const { oldPassword, newPassword } = req.body;
-        const isMatch = await user.comparePassword(oldPassword);
-
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Old password is incorrect' });
-        }
-
-        user.password = newPassword;
-        await user.save();
-
-        res.json({ success: true, message: 'Password changed successfully' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-});
-
-// Logout (optional - for client-side token management)
-router.post('/logout', (req, res) => {
-    res.json({ success: true, message: 'Logged out successfully' });
 });
 
 module.exports = router;
