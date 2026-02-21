@@ -119,12 +119,17 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-app.listen(port, () => {
-    console.log(`✅ SMART ATTENDANCE Server running at http://localhost:${port}`);
-    console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🗄️  Database: Firebase Firestore`);
-});
+// Start server (only when not on Vercel)
+if (process.env.VERCEL !== '1') {
+    app.listen(port, () => {
+        console.log(`✅ SMART ATTENDANCE Server running at http://localhost:${port}`);
+        console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🗄️  Database: Firebase Firestore`);
+    });
+}
+
+// Export for Vercel
+module.exports = app;
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
