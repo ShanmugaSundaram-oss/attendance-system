@@ -26,7 +26,13 @@ router.post('/register', [
     body('lastName').trim().escape()
 ], validateInput, async (req, res) => {
     try {
-        const { username, email, password, role, firstName, lastName } = req.body;
+        const { username, email, password, role, firstName, lastName, phone, department, studentClass } = req.body;
+
+        // Check email domain
+        const emailDomain = email.split('@')[1] || '';
+        if (!emailDomain.endsWith('ritchennai.edu.in')) {
+            return res.status(400).json({ success: false, message: 'Only @ritchennai.edu.in emails are allowed' });
+        }
 
         // Check if user exists
         let user = await User.findOne({ $or: [{ email }, { username }] });
@@ -41,7 +47,11 @@ router.post('/register', [
             password,
             role,
             firstName,
-            lastName
+            lastName,
+            phone: phone || '',
+            department: department || '',
+            studentClass: studentClass || '',
+            authProvider: 'local'
         });
 
         await user.save();

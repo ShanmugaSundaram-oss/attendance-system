@@ -585,6 +585,10 @@
             </div>
             <p style="text-align:center;font-size:.7rem;color:#444;margin-top:.75rem;">Only @ritchennai.edu.in emails
                 are allowed</p>
+            <p style="text-align:center;margin-top:1rem;font-size:.85rem;">
+                Don't have an account? <a href="/register.html"
+                    style="color:var(--primary-400);text-decoration:none;font-weight:600;">Register Now</a>
+            </p>
         </div>
     </div>
 
@@ -705,20 +709,36 @@
                 const provider = new firebase.auth.GoogleAuthProvider();
                 provider.setCustomParameters({ hd: 'ritchennai.edu.in' });
                 const result = await firebase.auth().signInWithPopup(provider);
-                const idToken = await result.user.getIdToken();
+                const user = result.user;
 
-                const authResult = await Auth.firebaseLogin(idToken, loginUserType);
+                console.log('Firebase user:', user.email, user.displayName);
+
+                // Send user info to our server
+                const userInfo = {
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    uid: user.uid
+                };
+
+                const authResult = await Auth.firebaseLogin(userInfo, loginUserType);
+                console.log('Auth result:', authResult);
+
                 if (authResult.success) {
-                    Toast.success(`Welcome, ${authResult.user?.firstName || authResult.user?.username}!`);
+                    closeLoginModal();
+                    Toast.success(`Welcome, ${authResult.user?.firstName || authResult.user?.username || user.displayName}!`);
+                    const role = authResult.user?.role || loginUserType;
                     const redirectMap = { student: '/student.html', teacher: '/teacher.html', admin: '/admin.html', transport: '/transport.html' };
-                    setTimeout(() => { window.location.href = redirectMap[authResult.user?.role || loginUserType]; }, 600);
+                    const target = redirectMap[role] || '/student.html';
+                    setTimeout(() => { window.location.href = target; }, 500);
                 } else {
-                    Toast.error(authResult.message || 'Login failed');
+                    Toast.error(authResult.message || 'Login failed. Please try again.');
                     btn.disabled = false;
                     btn.innerHTML = '<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" style="width:20px;height:20px;"> Sign in with Google';
                 }
             } catch (error) {
-                if (error.code !== 'auth/popup-closed-by-user') {
+                console.error('Firebase sign-in error:', error);
+                if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
                     Toast.error(error.message || 'Google sign-in failed');
                 }
                 btn.disabled = false;

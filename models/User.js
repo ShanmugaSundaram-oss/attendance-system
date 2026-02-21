@@ -32,6 +32,8 @@ const userSchema = new mongoose.Schema({
   phone: String,
   avatar: String,
   department: String,
+  studentClass: String,  // e.g. "III Year - B Section"
+  year: String,          // e.g. "I", "II", "III", "IV"
   authProvider: {
     type: String,
     enum: ['local', 'google'],

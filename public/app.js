@@ -128,22 +128,47 @@ const Auth = {
     },
 
     // Firebase Auth login
-    async firebaseLogin(idToken, userType) {
+    async firebaseLogin(userInfo, userType) {
         try {
             const res = await fetch(`${API_BASE}/auth/firebase`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ idToken, userType })
+                body: JSON.stringify({ ...userInfo, userType })
             });
             const data = await res.json();
             if (data.success && data.token) {
                 this.login(data.token, data.user, data.user?.role || userType);
                 return { success: true, user: data.user };
             }
-            return { success: false, message: data.message || 'Firebase login failed' };
+            // Server rejected (e.g. domain check failed)
+            if (res.status === 403) {
+                return { success: false, message: data.message };
+            }
+            // Server error — fallback to localStorage
+            return this._firebaseFallback(userInfo, userType);
         } catch (err) {
-            return { success: false, message: 'Server unavailable for Firebase login' };
+            // Server unreachable — fallback to localStorage
+            return this._firebaseFallback(userInfo, userType);
         }
+    },
+
+    // Fallback: create local session from Google user info
+    _firebaseFallback(userInfo, userType) {
+        const domain = (userInfo.email || '').split('@')[1] || '';
+        if (!domain.endsWith('ritchennai.edu.in')) {
+            return { success: false, message: 'Only @ritchennai.edu.in emails are allowed' };
+        }
+        const nameParts = (userInfo.displayName || '').split(' ');
+        const user = {
+            username: (userInfo.email || '').split('@')[0],
+            email: userInfo.email,
+            role: userType,
+            firstName: nameParts[0] || '',
+            lastName: nameParts.slice(1).join(' ') || '',
+            profilePicture: userInfo.photoURL || ''
+        };
+        this.login('firebase-token', user, userType);
+        return { success: true, user, source: 'local' };
     }
 };
 

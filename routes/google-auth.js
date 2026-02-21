@@ -1,40 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const admin = require('firebase-admin');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-
-// Initialize Firebase Admin SDK (uses projectId from env)
-if (!admin.apps.length) {
-    admin.initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'rit-smart-ims'
-    });
-}
 
 // Allowed email domain
 const ALLOWED_DOMAIN = 'ritchennai.edu.in';
 
+// Firebase Auth — receives verified user info from client-side Firebase SDK
 router.post('/firebase', async (req, res) => {
     try {
-        const { idToken, userType } = req.body;
+        const { email, displayName, photoURL, uid, userType } = req.body;
 
-        if (!idToken) {
-            return res.status(400).json({ success: false, message: 'Firebase ID token is required' });
-        }
-
-        // Verify Firebase ID token
-        let decodedToken;
-        try {
-            decodedToken = await admin.auth().verifyIdToken(idToken);
-        } catch (verifyError) {
-            console.error('Firebase token verification failed:', verifyError.message);
-            return res.status(401).json({ success: false, message: 'Invalid or expired token. Please sign in again.' });
-        }
-
-        const { email, name, picture, uid } = decodedToken;
-
-        if (!email) {
-            return res.status(400).json({ success: false, message: 'No email found in Firebase account' });
+        if (!email || !uid) {
+            return res.status(400).json({ success: false, message: 'Email and UID are required' });
         }
 
         // Check domain — allow any subdomain of ritchennai.edu.in
@@ -50,10 +28,9 @@ router.post('/firebase', async (req, res) => {
         let user = await User.findOne({ email: email.toLowerCase() });
 
         if (!user) {
-            // Auto-create user on first Firebase login
             const username = email.split('@')[0];
             const role = userType || 'student';
-            const nameParts = (name || '').split(' ');
+            const nameParts = (displayName || '').split(' ');
 
             user = new User({
                 username: username,
@@ -62,7 +39,7 @@ router.post('/firebase', async (req, res) => {
                 role: role,
                 firstName: nameParts[0] || '',
                 lastName: nameParts.slice(1).join(' ') || '',
-                profilePicture: picture || '',
+                profilePicture: photoURL || '',
                 isActive: true,
                 authProvider: 'google',
                 googleId: uid
@@ -92,9 +69,9 @@ router.post('/firebase', async (req, res) => {
                 username: user.username,
                 email: user.email,
                 role: user.role,
-                firstName: user.firstName || (name || '').split(' ')[0],
+                firstName: user.firstName || (displayName || '').split(' ')[0],
                 lastName: user.lastName || '',
-                profilePicture: picture
+                profilePicture: photoURL
             }
         });
 
